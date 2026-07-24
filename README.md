@@ -7,7 +7,6 @@
 [![Crates.io](https://img.shields.io/crates/v/cargo-qc?style=flat-square&color=orange)](https://crates.io/crates/cargo-qc)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
-[![Build](https://img.shields.io/github/actions/workflow/status/Vicente-Alejandro/cargo-qc/ci.yml?style=flat-square)](https://github.com/Vicente-Alejandro/cargo-qc/actions)
 
 `cargo fmt` · `cargo clippy` · `cargo build` — in one command, with an auditable log history.
 
