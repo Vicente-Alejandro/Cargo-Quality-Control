@@ -30,21 +30,30 @@ pub fn log_warning(message: impl Display) {
     println!("{} {message}", "warning:".yellow().bold());
 }
 
-pub fn run() -> anyhow::Result<()> {
+#[derive(Debug, Default)]
+pub struct QcOptions {
+    pub skip_fmt: bool,
+    pub skip_clippy: bool,
+    pub skip_build: bool,
+    pub skip_test: bool,
+    pub ci: bool,
+}
+
+pub fn run(options: QcOptions) -> anyhow::Result<()> {
     log_line("Local Quality Control".bold());
 
     let current_dir = env::current_dir()?;
 
     // Extract Version
     let mut version = String::from("unknown");
-    if let Ok(output) = Command::new("cargo").arg("pkgid").output() {
-        if output.status.success() {
-            let pkgid = String::from_utf8_lossy(&output.stdout);
-            if let Some((_, v)) = pkgid.rsplit_once('@') {
-                version = v.trim().to_string();
-            } else if let Some((_, v)) = pkgid.rsplit_once('#') {
-                version = v.trim().to_string();
-            }
+    if let Ok(output) = Command::new("cargo").arg("pkgid").output()
+        && output.status.success()
+    {
+        let pkgid = String::from_utf8_lossy(&output.stdout);
+        if let Some((_, v)) = pkgid.rsplit_once('@') {
+            version = v.trim().to_string();
+        } else if let Some((_, v)) = pkgid.rsplit_once('#') {
+            version = v.trim().to_string();
         }
     }
 
@@ -70,17 +79,17 @@ pub fn run() -> anyhow::Result<()> {
 
     if !skip_prompt_path.exists() {
         let mut needs_ignore = true;
-        if gitignore_path.exists() {
-            if let Ok(mut file) = fs::File::open(&gitignore_path) {
-                let mut content = String::new();
-                let _ = file.read_to_string(&mut content);
-                if content.contains("tools/cargo-qc") {
-                    needs_ignore = false;
-                }
+        if gitignore_path.exists()
+            && let Ok(mut file) = fs::File::open(&gitignore_path)
+        {
+            let mut content = String::new();
+            let _ = file.read_to_string(&mut content);
+            if content.contains("tools/cargo-qc") {
+                needs_ignore = false;
             }
         }
 
-        if needs_ignore {
+        if needs_ignore && !options.ci {
             log_warning("tools/cargo-qc/ is not in your .gitignore yet.");
             let selections = &["Yes, add it to .gitignore", "No, let me track it"];
 
@@ -116,64 +125,72 @@ pub fn run() -> anyhow::Result<()> {
     let history_file = log_dir.join(".qc_history.md");
     let errors_file = log_dir.join(".qc_errors.log");
 
-    if !history_file.exists() {
-        if let Ok(mut file) = OpenOptions::new()
+    if !history_file.exists()
+        && let Ok(mut file) = OpenOptions::new()
             .create(true)
             .append(true)
             .open(&history_file)
-        {
-            let _ = writeln!(file, "# Cargo QC History\n");
-            let _ = writeln!(file, "| Date | Version | Fmt | Clippy | Build | Overall |");
-            let _ = writeln!(file, "|---|---|---|---|---|---|");
-        }
+    {
+        let _ = writeln!(file, "# Cargo QC History\n");
+        let _ = writeln!(file, "| Date | Version | Fmt | Clippy | Build | Overall |");
+        let _ = writeln!(file, "|---|---|---|---|---|---|");
     }
 
     let mut err_log = String::new();
+    let mut fmt_pass = true;
+    let mut clippy_pass = true;
+    let mut build_pass = true;
 
-    let fmt_output = Command::new("cargo")
-        .arg("fmt")
-        .arg("--")
-        .arg("--check")
-        .output()
-        .map_err(QcError::FmtCheck)?;
-    let fmt_pass = fmt_output.status.success();
-    log_check("Running cargo fmt --check ...", fmt_pass);
-    if !fmt_pass {
-        err_log.push_str("--- FMT ERROR ---\n");
-        err_log.push_str(&String::from_utf8_lossy(&fmt_output.stdout));
-        err_log.push_str(&String::from_utf8_lossy(&fmt_output.stderr));
-        err_log.push('\n');
+    if !options.skip_fmt {
+        let fmt_output = Command::new("cargo")
+            .arg("fmt")
+            .arg("--")
+            .arg("--check")
+            .output()
+            .map_err(QcError::FmtCheck)?;
+        fmt_pass = fmt_output.status.success();
+        log_check("Running cargo fmt --check ...", fmt_pass);
+        if !fmt_pass {
+            err_log.push_str("--- FMT ERROR ---\n");
+            err_log.push_str(&String::from_utf8_lossy(&fmt_output.stdout));
+            err_log.push_str(&String::from_utf8_lossy(&fmt_output.stderr));
+            err_log.push('\n');
+        }
     }
 
-    let clippy_output = Command::new("cargo")
-        .arg("clippy")
-        .arg("--")
-        .arg("-D")
-        .arg("warnings")
-        .output()
-        .map_err(QcError::ClippyCheck)?;
-    let clippy_pass = clippy_output.status.success();
-    log_check("Running cargo clippy ...", clippy_pass);
-    if !clippy_pass {
-        err_log.push_str("--- CLIPPY ERROR ---\n");
-        err_log.push_str(&String::from_utf8_lossy(&clippy_output.stdout));
-        err_log.push_str(&String::from_utf8_lossy(&clippy_output.stderr));
-        err_log.push('\n');
-        eprint!("{}", String::from_utf8_lossy(&clippy_output.stderr));
+    if !options.skip_clippy {
+        let clippy_output = Command::new("cargo")
+            .arg("clippy")
+            .arg("--")
+            .arg("-D")
+            .arg("warnings")
+            .output()
+            .map_err(QcError::ClippyCheck)?;
+        clippy_pass = clippy_output.status.success();
+        log_check("Running cargo clippy ...", clippy_pass);
+        if !clippy_pass {
+            err_log.push_str("--- CLIPPY ERROR ---\n");
+            err_log.push_str(&String::from_utf8_lossy(&clippy_output.stdout));
+            err_log.push_str(&String::from_utf8_lossy(&clippy_output.stderr));
+            err_log.push('\n');
+            eprint!("{}", String::from_utf8_lossy(&clippy_output.stderr));
+        }
     }
 
-    let build_output = Command::new("cargo")
-        .arg("build")
-        .output()
-        .map_err(QcError::BuildCheck)?;
-    let build_pass = build_output.status.success();
-    log_check("Running cargo build ...", build_pass);
-    if !build_pass {
-        err_log.push_str("--- BUILD ERROR ---\n");
-        err_log.push_str(&String::from_utf8_lossy(&build_output.stdout));
-        err_log.push_str(&String::from_utf8_lossy(&build_output.stderr));
-        err_log.push('\n');
-        eprint!("{}", String::from_utf8_lossy(&build_output.stderr));
+    if !options.skip_build {
+        let build_output = Command::new("cargo")
+            .arg("build")
+            .output()
+            .map_err(QcError::BuildCheck)?;
+        build_pass = build_output.status.success();
+        log_check("Running cargo build ...", build_pass);
+        if !build_pass {
+            err_log.push_str("--- BUILD ERROR ---\n");
+            err_log.push_str(&String::from_utf8_lossy(&build_output.stdout));
+            err_log.push_str(&String::from_utf8_lossy(&build_output.stderr));
+            err_log.push('\n');
+            eprint!("{}", String::from_utf8_lossy(&build_output.stderr));
+        }
     }
 
     let all_passed = fmt_pass && clippy_pass && build_pass;
