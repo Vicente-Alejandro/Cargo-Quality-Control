@@ -1,29 +1,24 @@
 # 🗺️ Cargo QC Roadmap
 
-Este documento define las fases de desarrollo para elevar `cargo-qc` a un estándar profesional de `crates.io`. La regla de oro es completar cada hito de una versión antes de pasar a la siguiente.
+This document outlines the development phases to elevate `cargo-qc` to a professional `crates.io` standard. The golden rule is to complete every milestone in a version before moving to the next.
 
-## v0.4.0: Arquitectura y Bases de UX
-- [ ] Refactorización de Arquitectura: Separar el código en `src/lib.rs` (lógica) y `src/bin/main.rs` (CLI).
-- [ ] Implementar manejo de errores avanzado utilizando `anyhow` y `thiserror`.
-- [ ] Incorporar la librería `clap` para manejar argumentos por línea de comandos (ej. banderas `--skip-fmt`, `--ci`).
-- [ ] Añadir soporte oficial para que el pipeline ejecute `cargo test` (junto a fmt, clippy y build).
+## v0.4.0: Architecture and UX Foundations
+- [ ] Architecture Refactoring: Separate the code into `src/lib.rs` (logic) and `src/main.rs` (CLI wrapper).
+- [ ] Implement advanced error handling using `anyhow` and `thiserror`.
+- [ ] Integrate the `clap` crate for command-line argument parsing (e.g., `--skip-fmt`, `--ci` flags).
+- [ ] Add official support for executing `cargo test` in the pipeline (alongside fmt, clippy, and build).
 
-## v0.5.0: Estética y Experiencia Visual
-- [ ] Implementar la librería `indicatif` para añadir *spinners* animados de progreso en la terminal.
-- [ ] Asegurar compatibilidad estricta con la variable de entorno `NO_COLOR`.
-- [ ] Mejorar los mensajes de error mostrados al usuario para que sean más descriptivos y limpios.
+## v0.5.0: Aesthetics and Visual Experience
+- [ ] Implement the `indicatif` crate to add animated progress spinners in the terminal.
+- [ ] Ensure strict compatibility with the `NO_COLOR` environment variable.
+- [ ] Improve user-facing error messages to be more descriptive and clean.
 
-## v0.6.0: Configuración y Testing
-- [ ] Soporte para archivo de configuración opcional (`cargo-qc.toml`) para que los usuarios puedan habilitar/deshabilitar checks específicos en sus repositorios de forma persistente.
-- [ ] Implementar pruebas de integración (Integration Tests) utilizando la librería `assert_cmd` para simular la ejecución del CLI.
-- [ ] Agregar pruebas unitarias (Unit Tests) a la lógica principal en `lib.rs`.
+## v0.6.0: Configuration and Testing
+- [ ] Support an optional configuration file (`cargo-qc.toml`) allowing users to persistently enable/disable specific checks in their repositories.
+- [ ] Implement Integration Tests using the `assert_cmd` crate to simulate CLI execution.
+- [ ] Add Unit Tests for the core logic in `lib.rs`.
 
-## v0.7.0: Estandarización Open Source
-- [ ] Implementar herramientas para generación automatizada de `CHANGELOG.md` (ej. `git-cliff`).
-- [ ] Crear el documento `CONTRIBUTING.md` con guías claras para aportar al proyecto.
-- [ ] Actualizar el `README.md` añadiendo un GIF demostrativo o un SVG animado (`vhs`) mostrando la herramienta en acción.
-
-## v0.8.0 / v1.0.0: La Versión Especial (Automatización e Integración Continua)
-- [ ] Configurar pipelines completos de GitHub Actions para CI.
-- [ ] Crear el Action de despliegue automático a `crates.io` al subir un tag semántico.
-- [ ] Proveer instrucciones claras y un Github Action de `cargo-qc` para que los usuarios lo consuman directamente en sus propios repositorios.
+## v0.7.0: Open Source Standardization
+- [ ] Implement tools for automated `CHANGELOG.md` generation (e.g., `git-cliff`).
+- [ ] Create a `CONTRIBUTING.md` document with clear guidelines for contributing to the project.
+- [ ] Update the `README.md` by adding a demonstration GIF or animated SVG (`vhs`) showing the tool in action.
