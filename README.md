@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.3.1
+# Cargo Quality Control v0.4.0
 
 **Local quality control automation for Rust projects.**
 
@@ -116,10 +116,11 @@ cargo qc
 | 3 | Check formatting | `cargo fmt -- --check` |
 | 4 | Run linter | `cargo clippy -- -D warnings` |
 | 5 | Compile | `cargo build` |
-| 6 | Append result row | writes to `tools/cargo-qc/.qc_history.md` |
-| 7 | On failure: save errors | writes to `tools/cargo-qc/.qc_errors.log` |
+| 6 | Run tests | `cargo test` |
+| 7 | Append result row | writes to `tools/cargo-qc/.qc_history.md` |
+| 8 | On failure: save errors | writes to `tools/cargo-qc/.qc_errors.log` |
 
-Steps 3–5 run sequentially. **A failing step does not abort subsequent steps** — all three checks run regardless, so you get a complete picture of the project's current state in a single pass.
+Steps 3–6 run sequentially. **A failing step does not abort subsequent steps** — all checks run regardless, so you get a complete picture of the project's current state in a single pass.
 
 If any step fails, `cargo-qc` exits with a non-zero exit code after writing the error log.
 
@@ -150,11 +151,11 @@ The log directory is designed to be committed alongside your code for auditabili
 
 A persistent Markdown table, one row per run, appended automatically:
 
-| Date | Version | Fmt | Clippy | Build | Overall |
-|------|---------|-----|--------|-------|---------|
-| 2026-07-24 01:15 | 0.3.1 | ❌ | ❌ | ✅ | ❌ |
-| 2026-07-24 01:22 | 0.3.1 | ✅ | ❌ | ✅ | ❌ |
-| 2026-07-24 01:31 | 0.3.1 | ✅ | ✅ | ✅ | ✅ |
+| Date | Version | Fmt | Clippy | Build | Test | Overall |
+|------|---------|-----|--------|-------|------|---------|
+| 2026-07-24 01:15 | 0.4.0 | ❌ | ❌ | ✅ | ✅ | ❌ |
+| 2026-07-24 01:22 | 0.4.0 | ✅ | ❌ | ✅ | ✅ | ❌ |
+| 2026-07-24 01:31 | 0.4.0 | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### `tools/cargo-qc/.qc_errors.log`
 

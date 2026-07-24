@@ -6,14 +6,14 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ## v0.4.0: Architecture and UX Foundations
 
-- [ ] **Architecture refactoring.** Split into `src/lib.rs` (logic, organized into `checks.rs`, `logging.rs`, `config.rs` modules) and a thin `src/main.rs` that only parses arguments, calls the library, and translates the result into an exit code. This is what makes v0.6.0's unit tests possible — a `main.rs`-only implementation can't be unit tested without spawning a real process.
-- [ ] **Structured error handling.** Define a `QcError` enum in `lib.rs` with `thiserror`, one variant per failure domain (`VersionDetection`, `LogDirCreation(#[from] io::Error)`, `CheckFailed { check: CheckKind }`, `ConfigParse(#[from] toml::de::Error)`, …), each preserving its source via `#[from]`/`#[source]`. Keep `anyhow` in `main.rs` only, where it's used to add human-readable `.context(...)` breadcrumbs and unify the top-level `Result` before mapping it back to one of the three documented exit codes. This is the standard split for a Rust CLI: `thiserror` for the library's typed, matchable errors; `anyhow` for the application layer that just needs to report what went wrong.
-- [ ] **`clap` integration** (derive API, `#[derive(Parser)]` / `#[derive(Subcommand)]`, `#[command(author, version, about, long_about = None)]`):
+- [x] **Architecture refactoring.** Split into `src/lib.rs` (logic, organized into `checks.rs`, `logging.rs`, `config.rs` modules) and a thin `src/main.rs` that only parses arguments, calls the library, and translates the result into an exit code. This is what makes v0.6.0's unit tests possible — a `main.rs`-only implementation can't be unit tested without spawning a real process.
+- [x] **Structured error handling.** Define a `QcError` enum in `lib.rs` with `thiserror`, one variant per failure domain (`VersionDetection`, `LogDirCreation(#[from] io::Error)`, `CheckFailed { check: CheckKind }`, `ConfigParse(#[from] toml::de::Error)`, …), each preserving its source via `#[from]`/`#[source]`. Keep `anyhow` in `main.rs` only, where it's used to add human-readable `.context(...)` breadcrumbs and unify the top-level `Result` before mapping it back to one of the three documented exit codes. This is the standard split for a Rust CLI: `thiserror` for the library's typed, matchable errors; `anyhow` for the application layer that just needs to report what went wrong.
+- [x] **`clap` integration** (derive API, `#[derive(Parser)]` / `#[derive(Subcommand)]`, `#[command(author, version, about, long_about = None)]`):
   - `--skip-fmt`, `--skip-clippy`, `--skip-build`, `--skip-test` — opt out of individual checks.
   - `--ci` — non-interactive mode: never prompts for the `.gitignore` decision (defaults to "yes, ignore"), and keeps terminal output linear (see v0.5.0 on spinners in CI).
   - `--config <PATH>` — override the config file location (ties into v0.6.0).
   - `-q` / `--quiet`.
-- [ ] **`cargo test` as a fourth check**, alongside fmt/clippy/build, following the existing "run everything regardless of earlier failures" philosophy — extend the history table to `Fmt | Clippy | Build | Test | Overall` and expose `--skip-test` for workspaces where the test suite is slow or needs external services.
+- [x] **`cargo test` as a fourth check**, alongside fmt/clippy/build, following the existing "run everything regardless of earlier failures" philosophy — extend the history table to `Fmt | Clippy | Build | Test | Overall` and expose `--skip-test` for workspaces where the test suite is slow or needs external services.
 
 **Definition of Done:** `cargo-qc` still passes its own `cargo qc` after the refactor; the four checks all run and log correctly; `--help` documents every flag above.
 
