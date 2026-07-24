@@ -132,14 +132,18 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
             .open(&history_file)
     {
         let _ = writeln!(file, "# Cargo QC History\n");
-        let _ = writeln!(file, "| Date | Version | Fmt | Clippy | Build | Overall |");
-        let _ = writeln!(file, "|---|---|---|---|---|---|");
+        let _ = writeln!(
+            file,
+            "| Date | Version | Fmt | Clippy | Build | Test | Overall |"
+        );
+        let _ = writeln!(file, "|---|---|---|---|---|---|---|");
     }
 
     let mut err_log = String::new();
     let mut fmt_pass = true;
     let mut clippy_pass = true;
     let mut build_pass = true;
+    let mut test_pass = true;
 
     if !options.skip_fmt {
         let fmt_output = Command::new("cargo")
@@ -193,8 +197,24 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
         }
     }
 
-    let all_passed = fmt_pass && clippy_pass && build_pass;
-    let failed_count = [fmt_pass, clippy_pass, build_pass]
+    if !options.skip_test {
+        let test_output = Command::new("cargo")
+            .arg("test")
+            .output()
+            .map_err(QcError::TestCheck)?;
+        test_pass = test_output.status.success();
+        log_check("Running cargo test ...", test_pass);
+        if !test_pass {
+            err_log.push_str("--- TEST ERROR ---\n");
+            err_log.push_str(&String::from_utf8_lossy(&test_output.stdout));
+            err_log.push_str(&String::from_utf8_lossy(&test_output.stderr));
+            err_log.push('\n');
+            eprint!("{}", String::from_utf8_lossy(&test_output.stderr));
+        }
+    }
+
+    let all_passed = fmt_pass && clippy_pass && build_pass && test_pass;
+    let failed_count = [fmt_pass, clippy_pass, build_pass, test_pass]
         .iter()
         .filter(|passed| !**passed)
         .count();
@@ -205,12 +225,13 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
     if let Ok(mut file) = OpenOptions::new().append(true).open(&history_file) {
         let _ = writeln!(
             file,
-            "| {} | `{}` | {} | {} | {} | {} |",
+            "| {} | `{}` | {} | {} | {} | {} | {} |",
             date,
             version,
             icon(fmt_pass),
             icon(clippy_pass),
             icon(build_pass),
+            icon(test_pass),
             icon(all_passed)
         );
     }
