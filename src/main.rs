@@ -9,11 +9,11 @@ use std::process::Command;
 fn main() {
     println!(
         "{}",
-        "🚀 Running Local Quality Control (cargo qc)".bold().cyan()
+        "Running Local Quality Control (cargo qc)".bold().cyan()
     );
 
     let current_dir = env::current_dir().expect("Failed to get current directory");
-    println!("📍 Directory: {}\n", current_dir.display());
+    println!("Directory: {}\n", current_dir.display());
 
     // Extract Version
     let mut version = String::from("Unknown");
@@ -28,7 +28,7 @@ fn main() {
             version = v.trim().to_string();
         }
     }
-    println!("📦 Project Version: {}", version.cyan());
+    println!("Project Version: {}", version.cyan());
 
     // Ensure log directory exists
     let log_dir = current_dir.join("tools").join("cargo-qc");
@@ -222,7 +222,7 @@ fn main() {
 
     println!(
         "\n{}",
-        "🎉 All checks passed successfully! Traceability updated."
+        "All checks passed successfully! Traceability updated."
             .bold()
             .green()
     );
