@@ -6,43 +6,55 @@ use std::io::Write;
 use std::process::Command;
 
 fn main() {
-    println!("{}", "🚀 Running Local Quality Control (cargo qc)".bold().cyan());
+    println!(
+        "{}",
+        "🚀 Running Local Quality Control (cargo qc)".bold().cyan()
+    );
 
     let current_dir = env::current_dir().expect("Failed to get current directory");
     println!("📍 Directory: {}\n", current_dir.display());
 
     // Extract Version
     let mut version = String::from("Unknown");
-    if let Ok(output) = Command::new("cargo").arg("pkgid").output() {
-        if output.status.success() {
-            let pkgid = String::from_utf8_lossy(&output.stdout);
-            // Parses e.g. path+file:///...#flappy_bird@0.1.0 or ...#0.1.0
-            if let Some(v) = pkgid.split('@').last() {
-                version = v.trim().to_string();
-            } else if let Some(v) = pkgid.split('#').last() {
-                version = v.trim().to_string();
-            }
+    if let Ok(output) = Command::new("cargo").arg("pkgid").output()
+        && output.status.success()
+    {
+        let pkgid = String::from_utf8_lossy(&output.stdout);
+        // Parses e.g. path+file:///...#flappy_bird@0.1.0 or ...#0.1.0
+        if let Some(v) = pkgid.split('@').next_back() {
+            version = v.trim().to_string();
+        } else if let Some(v) = pkgid.split('#').next_back() {
+            version = v.trim().to_string();
         }
     }
     println!("📦 Project Version: {}", version.cyan());
 
-    // Determine log directory (Use tools/cargo-qc if it exists, else current dir)
-    let log_dir = if current_dir.join("tools").join("cargo-qc").exists() {
-        current_dir.join("tools").join("cargo-qc")
-    } else {
-        current_dir.clone()
-    };
+    // Ensure log directory exists
+    let log_dir = current_dir.join("tools").join("cargo-qc");
+    if !log_dir.exists()
+        && let Err(e) = std::fs::create_dir_all(&log_dir)
+    {
+        eprintln!(
+            "{} {}",
+            "❌ Failed to create log directory:".red().bold(),
+            e
+        );
+        std::process::exit(1);
+    }
 
     let history_file = log_dir.join(".qc_history.md");
     let errors_file = log_dir.join(".qc_errors.log");
 
     // Ensure history file has header
-    if !history_file.exists() {
-        if let Ok(mut file) = OpenOptions::new().create(true).write(true).open(&history_file) {
-            let _ = writeln!(file, "# Cargo QC History\n");
-            let _ = writeln!(file, "| Date | Version | Fmt | Clippy | Build | Overall |");
-            let _ = writeln!(file, "|---|---|---|---|---|---|");
-        }
+    if !history_file.exists()
+        && let Ok(mut file) = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&history_file)
+    {
+        let _ = writeln!(file, "# Cargo QC History\n");
+        let _ = writeln!(file, "| Date | Version | Fmt | Clippy | Build | Overall |");
+        let _ = writeln!(file, "|---|---|---|---|---|---|");
     }
 
     let mut all_passed = true;
@@ -65,7 +77,7 @@ fn main() {
         err_log.push_str("--- FMT ERROR ---\n");
         err_log.push_str(&String::from_utf8_lossy(&fmt_output.stdout));
         err_log.push_str(&String::from_utf8_lossy(&fmt_output.stderr));
-        err_log.push_str("\n");
+        err_log.push('\n');
         all_passed = false;
     }
 
@@ -90,7 +102,7 @@ fn main() {
         err_log.push_str("--- CLIPPY ERROR ---\n");
         err_log.push_str(&String::from_utf8_lossy(&clippy_output.stdout));
         err_log.push_str(&String::from_utf8_lossy(&clippy_output.stderr));
-        err_log.push_str("\n");
+        err_log.push('\n');
         // Print it to terminal as well so they know what to fix right away
         eprint!("{}", String::from_utf8_lossy(&clippy_output.stderr));
         all_passed = false;
@@ -98,8 +110,10 @@ fn main() {
 
     // 3. Build
     println!("\n{}", "➔ Running cargo build...".yellow());
-    let build_output =
-        Command::new("cargo").arg("build").output().expect("Failed to execute cargo build");
+    let build_output = Command::new("cargo")
+        .arg("build")
+        .output()
+        .expect("Failed to execute cargo build");
 
     let build_pass = build_output.status.success();
     if build_pass {
@@ -109,7 +123,7 @@ fn main() {
         err_log.push_str("--- BUILD ERROR ---\n");
         err_log.push_str(&String::from_utf8_lossy(&build_output.stdout));
         err_log.push_str(&String::from_utf8_lossy(&build_output.stderr));
-        err_log.push_str("\n");
+        err_log.push('\n');
         eprint!("{}", String::from_utf8_lossy(&build_output.stderr));
         all_passed = false;
     }
@@ -133,7 +147,11 @@ fn main() {
 
     // Write Errors if any
     if !all_passed {
-        if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&errors_file) {
+        if let Ok(mut file) = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&errors_file)
+        {
             let _ = writeln!(file, "========================================");
             let _ = writeln!(file, "DATE: {} | VERSION: {}", date, version);
             let _ = writeln!(file, "========================================");
@@ -148,5 +166,10 @@ fn main() {
         std::process::exit(1);
     }
 
-    println!("\n{}", "🎉 All checks passed successfully! Traceability updated.".bold().green());
+    println!(
+        "\n{}",
+        "🎉 All checks passed successfully! Traceability updated."
+            .bold()
+            .green()
+    );
 }
