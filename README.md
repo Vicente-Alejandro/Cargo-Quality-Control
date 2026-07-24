@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.4.0
+# Cargo Quality Control v0.4.1
 
 **Local quality control automation for Rust projects.**
 
@@ -107,6 +107,23 @@ Navigate to the root of any Rust project and run:
 cargo qc
 ```
 
+### Command-line Arguments
+
+You can customize the pipeline execution with the following flags:
+
+| Flag | Description |
+|---|---|
+| `--skip-fmt` | Skip the `cargo fmt` check |
+| `--skip-clippy` | Skip the `cargo clippy` linter |
+| `--skip-build` | Skip the `cargo build` compilation |
+| `--skip-test` | Skip the `cargo test` execution |
+| `--ci` | Run in non-interactive CI mode (suppresses the `.gitignore` prompt) |
+
+Example:
+```bash
+cargo qc --skip-fmt --ci
+```
+
 ### What happens, step by step
 
 | Step | Command | Flags |
@@ -163,7 +180,7 @@ Structured error output, written only when at least one check fails. Previous er
 
 ```
 ========================================
-DATE: 2026-07-24 01:22 | VERSION: 0.3.1
+DATE: 2026-07-24 01:22 | VERSION: 0.4.1
 ========================================
 
 --- CLIPPY ERRORS ---
