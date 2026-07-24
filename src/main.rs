@@ -1,8 +1,9 @@
 use chrono::Local;
 use colored::*;
+use dialoguer::{Select, theme::ColorfulTheme};
 use std::env;
-use std::fs::OpenOptions;
-use std::io::Write;
+use std::fs::{self, OpenOptions};
+use std::io::{Read, Write};
 use std::process::Command;
 
 fn main() {
@@ -40,6 +41,59 @@ fn main() {
             e
         );
         std::process::exit(1);
+    }
+
+    // Check if tools/cargo-qc is in .gitignore
+    let gitignore_path = current_dir.join(".gitignore");
+    let skip_prompt_path = log_dir.join(".skip_gitignore_prompt");
+
+    if !skip_prompt_path.exists() {
+        let mut needs_ignore = true;
+        if gitignore_path.exists() {
+            if let Ok(mut file) = fs::File::open(&gitignore_path) {
+                let mut content = String::new();
+                let _ = file.read_to_string(&mut content);
+                if content.contains("tools/cargo-qc") {
+                    needs_ignore = false;
+                }
+            }
+        }
+
+        if needs_ignore {
+            println!(
+                "\n{}",
+                "⚠️ Notice: tools/cargo-qc/ is not in your .gitignore".yellow()
+            );
+            let selections = &["Yes, add it to .gitignore", "No, let me track it"];
+
+            let selection = Select::with_theme(&ColorfulTheme::default())
+                .with_prompt("Do you want to automatically ignore the cargo-qc log directory?")
+                .default(0)
+                .items(&selections[..])
+                .interact_opt()
+                .unwrap_or(None);
+
+            match selection {
+                Some(0) => {
+                    if let Ok(mut file) = OpenOptions::new()
+                        .create(true)
+                        .append(true)
+                        .open(&gitignore_path)
+                    {
+                        let _ = writeln!(file, "\n# cargo-qc logs\ntools/cargo-qc/");
+                        println!("{}", "✅ Added tools/cargo-qc/ to .gitignore".green());
+                    }
+                }
+                Some(1) => {
+                    // Create skip file
+                    let _ = fs::File::create(&skip_prompt_path);
+                    println!("{}", "Got it. I won't ask again.".dimmed());
+                }
+                _ => {
+                    println!("{}", "Skipped. I'll ask next time.".dimmed());
+                }
+            }
+        }
     }
 
     let history_file = log_dir.join(".qc_history.md");
