@@ -1,3 +1,4 @@
 /target
 .qc_errors.log
 .qc_history.md
+tools/cargo-qc/
