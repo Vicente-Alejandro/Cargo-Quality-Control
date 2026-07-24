@@ -2,45 +2,105 @@ use chrono::Local;
 use colored::*;
 use dialoguer::{Select, theme::ColorfulTheme};
 use std::env;
+use std::fmt::Display;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::process::Command;
 
+/// Fixed prefix printed at the start of every informational line.
+///
+/// This matches the terminal-output examples already documented in
+/// README.md, so the tool's real behavior finally matches what the
+/// docs promise instead of drifting from it.
+const PREFIX: &str = "[cargo-qc]";
+
+/// Column width used to right-align the pass/fail icon of every check
+/// line, so a run with several checks renders as one clean vertical
+/// column of icons instead of a ragged list. 34 comfortably fits the
+/// longest current label ("Running cargo fmt --check ...", 29 chars)
+/// plus a visual gap; bump this if a future check gets a longer label.
+const CHECK_LABEL_WIDTH: usize = 34;
+
+/// Prints a standard `[cargo-qc]` informational line.
+///
+/// Centralizing this in one place means the prefix's styling (currently
+/// dimmed, so the message itself stays the visual focus) only has to
+/// change in one place if that ever needs to change. Accepts anything
+/// `Display`, so both plain `&str`/`String` and `colored::ColoredString`
+/// values can be passed in without an extra `.to_string()` call.
+fn log_line(message: impl Display) {
+    println!("{} {}", PREFIX.dimmed(), message);
+}
+
+/// Prints one quality-gate result line, e.g.:
+/// `[cargo-qc] Running cargo fmt --check ...        ✅`
+///
+/// ✅ / ❌ are reserved exclusively for the pass/fail status of the three
+/// quality gates (fmt, clippy, build) — that's the meaning README.md's
+/// example output already assigns them, so we don't reuse them for
+/// anything else (no decorative emoji elsewhere in this tool).
+fn log_check(label: &str, passed: bool) {
+    let icon = if passed { "✅" } else { "❌" };
+    println!("{} {label:<CHECK_LABEL_WIDTH$}{icon}", PREFIX.dimmed());
+}
+
+/// Prints a fatal, non-check error using the same `error:` convention
+/// `rustc`/`cargo`/`clippy` already use, so cargo-qc's own diagnostics
+/// read consistently with the tools it wraps.
+fn log_error(message: impl Display) {
+    eprintln!("{} {message}", "error:".red().bold());
+}
+
+/// Prints a non-fatal warning using the same `warning:` convention as
+/// `rustc`/`cargo`/`clippy`.
+fn log_warning(message: impl Display) {
+    println!("{} {message}", "warning:".yellow().bold());
+}
+
 fn main() {
-    println!(
-        "{}",
-        "Running Local Quality Control (cargo qc)".bold().cyan()
-    );
+    log_line("Local Quality Control".bold());
 
     let current_dir = env::current_dir().expect("Failed to get current directory");
-    println!("Directory: {}\n", current_dir.display());
 
     // Extract Version
-    let mut version = String::from("Unknown");
+    let mut version = String::from("unknown");
     if let Ok(output) = Command::new("cargo").arg("pkgid").output()
         && output.status.success()
     {
         let pkgid = String::from_utf8_lossy(&output.stdout);
-        // Parses e.g. path+file:///...#flappy_bird@0.1.0 or ...#0.1.0
-        if let Some(v) = pkgid.split('@').next_back() {
+        if let Some((_, v)) = pkgid.rsplit_once('@') {
             version = v.trim().to_string();
-        } else if let Some(v) = pkgid.split('#').next_back() {
+        } else if let Some((_, v)) = pkgid.rsplit_once('#') {
             version = v.trim().to_string();
         }
     }
-    println!("Project Version: {}", version.cyan());
+
+    // NOTE: this is a display-only stand-in for the crate name, taken from
+    // the current directory. `cargo pkgid` *does* carry the real name, but
+    // it's only present in the pkgid string when it differs from the
+    // directory name — extracting it robustly is exactly the kind of logic
+    // that belongs in `lib.rs` once the v0.4.0 architecture refactor lands,
+    // with a unit test covering both pkgid formats. Treat this line as a
+    // placeholder, not a parser, until then.
+    let project_name = current_dir
+        .file_name()
+        .map(|name| name.to_string_lossy().to_string())
+        .unwrap_or_else(|| "project".to_string());
+
+    log_line(format!(
+        "Project: {} v{}",
+        project_name.bold(),
+        version.cyan()
+    ));
+    log_line(format!("Directory: {}", current_dir.display()));
 
     // Ensure log directory exists
     let log_dir = current_dir.join("tools").join("cargo-qc");
     if !log_dir.exists()
         && let Err(e) = std::fs::create_dir_all(&log_dir)
     {
-        eprintln!(
-            "{} {}",
-            "❌ Failed to create log directory:".red().bold(),
-            e
-        );
-        std::process::exit(1);
+        log_error(format!("could not create log directory: {e}"));
+        std::process::exit(2);
     }
 
     // Check if tools/cargo-qc is in .gitignore
@@ -49,25 +109,22 @@ fn main() {
 
     if !skip_prompt_path.exists() {
         let mut needs_ignore = true;
-        if gitignore_path.exists() {
-            if let Ok(mut file) = fs::File::open(&gitignore_path) {
-                let mut content = String::new();
-                let _ = file.read_to_string(&mut content);
-                if content.contains("tools/cargo-qc") {
-                    needs_ignore = false;
-                }
+        if gitignore_path.exists()
+            && let Ok(mut file) = fs::File::open(&gitignore_path)
+        {
+            let mut content = String::new();
+            let _ = file.read_to_string(&mut content);
+            if content.contains("tools/cargo-qc") {
+                needs_ignore = false;
             }
         }
 
         if needs_ignore {
-            println!(
-                "\n{}",
-                "⚠️ Notice: tools/cargo-qc/ is not in your .gitignore".yellow()
-            );
+            log_warning("tools/cargo-qc/ is not in your .gitignore yet.");
             let selections = &["Yes, add it to .gitignore", "No, let me track it"];
 
             let selection = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("Do you want to automatically ignore the cargo-qc log directory?")
+                .with_prompt("Automatically ignore the cargo-qc log directory?")
                 .default(0)
                 .items(&selections[..])
                 .interact_opt()
@@ -81,16 +138,15 @@ fn main() {
                         .open(&gitignore_path)
                     {
                         let _ = writeln!(file, "\n# cargo-qc logs\ntools/cargo-qc/");
-                        println!("{}", "✅ Added tools/cargo-qc/ to .gitignore".green());
+                        log_line("Added tools/cargo-qc/ to .gitignore.");
                     }
                 }
                 Some(1) => {
-                    // Create skip file
                     let _ = fs::File::create(&skip_prompt_path);
-                    println!("{}", "Got it. I won't ask again.".dimmed());
+                    log_line("Understood — this won't be asked again.");
                 }
                 _ => {
-                    println!("{}", "Skipped. I'll ask next time.".dimmed());
+                    log_line("Skipped — this will be asked again next run.");
                 }
             }
         }
@@ -111,35 +167,25 @@ fn main() {
         let _ = writeln!(file, "|---|---|---|---|---|---|");
     }
 
-    let mut all_passed = true;
     let mut err_log = String::new();
 
     // 1. Formatting
-    println!("\n{}", "➔ Running cargo fmt...".yellow());
     let fmt_output = Command::new("cargo")
         .arg("fmt")
         .arg("--")
         .arg("--check")
         .output()
         .expect("Failed to execute cargo fmt");
-
     let fmt_pass = fmt_output.status.success();
-    if fmt_pass {
-        println!("{}", "✅ Formatting passed!".green());
-    } else {
-        println!("{}", "❌ Formatting failed.".red().bold());
+    log_check("Running cargo fmt --check ...", fmt_pass);
+    if !fmt_pass {
         err_log.push_str("--- FMT ERROR ---\n");
         err_log.push_str(&String::from_utf8_lossy(&fmt_output.stdout));
         err_log.push_str(&String::from_utf8_lossy(&fmt_output.stderr));
         err_log.push('\n');
-        all_passed = false;
     }
 
     // 2. Clippy
-    println!("\n{}", "➔ Running cargo clippy...".yellow());
-    // Use inherited stdout/stderr so the user can see it in real-time,
-    // but to capture it we'd have to pipe. For clippy, seeing it in real time is better,
-    // but the user wanted to save the error log. So we capture it.
     let clippy_output = Command::new("cargo")
         .arg("clippy")
         .arg("--")
@@ -147,40 +193,38 @@ fn main() {
         .arg("warnings")
         .output()
         .expect("Failed to execute cargo clippy");
-
     let clippy_pass = clippy_output.status.success();
-    if clippy_pass {
-        println!("{}", "✅ Clippy passed!".green());
-    } else {
-        println!("{}", "❌ Clippy failed.".red().bold());
+    log_check("Running cargo clippy ...", clippy_pass);
+    if !clippy_pass {
         err_log.push_str("--- CLIPPY ERROR ---\n");
         err_log.push_str(&String::from_utf8_lossy(&clippy_output.stdout));
         err_log.push_str(&String::from_utf8_lossy(&clippy_output.stderr));
         err_log.push('\n');
-        // Print it to terminal as well so they know what to fix right away
+        // Still surface the raw compiler output immediately so the user
+        // doesn't have to open the log file to start fixing lints.
         eprint!("{}", String::from_utf8_lossy(&clippy_output.stderr));
-        all_passed = false;
     }
 
     // 3. Build
-    println!("\n{}", "➔ Running cargo build...".yellow());
     let build_output = Command::new("cargo")
         .arg("build")
         .output()
         .expect("Failed to execute cargo build");
-
     let build_pass = build_output.status.success();
-    if build_pass {
-        println!("{}", "✅ Build passed!".green());
-    } else {
-        println!("{}", "❌ Build failed.".red().bold());
+    log_check("Running cargo build ...", build_pass);
+    if !build_pass {
         err_log.push_str("--- BUILD ERROR ---\n");
         err_log.push_str(&String::from_utf8_lossy(&build_output.stdout));
         err_log.push_str(&String::from_utf8_lossy(&build_output.stderr));
         err_log.push('\n');
         eprint!("{}", String::from_utf8_lossy(&build_output.stderr));
-        all_passed = false;
     }
+
+    let all_passed = fmt_pass && clippy_pass && build_pass;
+    let failed_count = [fmt_pass, clippy_pass, build_pass]
+        .iter()
+        .filter(|passed| !**passed)
+        .count();
 
     // Write History
     let date = Local::now().format("%Y-%m-%d %H:%M").to_string();
@@ -199,7 +243,7 @@ fn main() {
         );
     }
 
-    // Write Errors if any
+    // Write errors, if any, and report the outcome.
     if !all_passed {
         if let Ok(mut file) = OpenOptions::new()
             .create(true)
@@ -207,23 +251,23 @@ fn main() {
             .open(&errors_file)
         {
             let _ = writeln!(file, "========================================");
-            let _ = writeln!(file, "DATE: {} | VERSION: {}", date, version);
+            let _ = writeln!(file, "DATE: {date} | VERSION: {version}");
             let _ = writeln!(file, "========================================");
-            let _ = writeln!(file, "{}", err_log);
+            let _ = writeln!(file, "{err_log}");
         }
-        println!(
-            "\n{}",
-            "⚠️ Some checks failed. Details saved to .qc_history.md and .qc_errors.log"
-                .red()
-                .bold()
+        log_line(
+            format!(
+                "{failed_count} check(s) failed. See tools/cargo-qc/.qc_errors.log for details."
+            )
+            .red()
+            .bold(),
         );
         std::process::exit(1);
     }
 
-    println!(
-        "\n{}",
-        "All checks passed successfully! Traceability updated."
-            .bold()
+    log_line(
+        "All checks passed. Log written to tools/cargo-qc/.qc_history.md"
             .green()
+            .bold(),
     );
 }
