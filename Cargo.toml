@@ -12,7 +12,9 @@ categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
 exclude = [
     "/.agents",
-    "/.github"
+    "/.github",
+    "ROADMAP.md",
+    "develop.t"
 ]
 
 [dependencies]
