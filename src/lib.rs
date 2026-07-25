@@ -1,3 +1,7 @@
+#![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
+
+/// Error definitions for the cargo-qc pipeline.
 pub mod error;
 
 use chrono::Local;
@@ -13,32 +17,46 @@ use std::process::Command;
 const PREFIX: &str = "[cargo-qc]";
 const CHECK_LABEL_WIDTH: usize = 34;
 
+/// Logs a plain message to the console with the `[cargo-qc]` prefix.
 pub fn log_line(message: impl Display) {
     println!("{} {}", PREFIX.dimmed(), message);
 }
 
+/// Logs a check step (e.g. fmt, clippy) and whether it passed (`✅` or `❌`).
 pub fn log_check(label: &str, passed: bool) {
     let icon = if passed { "✅" } else { "❌" };
     println!("{} {label:<CHECK_LABEL_WIDTH$}{icon}", PREFIX.dimmed());
 }
 
+/// Logs a fatal error message in red.
 pub fn log_error(message: impl Display) {
     eprintln!("{} {message}", "error:".red().bold());
 }
 
+/// Logs a warning message in yellow.
 pub fn log_warning(message: impl Display) {
     println!("{} {message}", "warning:".yellow().bold());
 }
 
+/// Configuration options for the quality control pipeline.
 #[derive(Debug, Default)]
 pub struct QcOptions {
+    /// Skip the `cargo fmt` check.
     pub skip_fmt: bool,
+    /// Skip the `cargo clippy` linter.
     pub skip_clippy: bool,
+    /// Skip the `cargo build` compilation.
     pub skip_build: bool,
+    /// Skip the `cargo test` execution.
     pub skip_test: bool,
+    /// Run in non-interactive CI mode.
     pub ci: bool,
 }
 
+/// Main entry point for the `cargo qc` library.
+///
+/// Runs the configured quality gates (fmt, clippy, build, test) sequentially,
+/// writes the results to `.qc_history.md`, and saves any errors to `.qc_errors.log`.
 pub fn run(options: QcOptions) -> anyhow::Result<()> {
     log_line("Local Quality Control".bold());
 
