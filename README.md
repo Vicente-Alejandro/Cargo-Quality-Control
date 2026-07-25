@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.4.4
+# Cargo Quality Control v0.4.5
 
 **Local quality control automation for Rust projects.**
 
@@ -20,7 +20,7 @@
 
 It solves a specific problem: ensuring that **no commit ever skips a quality check**, and that the history of those checks is **readable, auditable, and co-located with the code** — not locked inside a CI provider's dashboard.
 
-```
+```text
 $ cargo qc
 
 [cargo-qc] Project: Bevy v0.19.1
@@ -157,7 +157,7 @@ The log directory is designed to be committed alongside your code for auditabili
 
 ### Terminal output
 
-```
+```text
 [cargo-qc] Project: my-project v1.2.0
 [cargo-qc] Running cargo fmt --check ...   ✅
 [cargo-qc] Running cargo clippy ...        ❌
@@ -180,9 +180,9 @@ A persistent Markdown table, one row per run, appended automatically:
 
 Structured error output, written only when at least one check fails. Previous error content is **overwritten** on each run — the file always reflects the most recent failure:
 
-```
+```text
 ========================================
-DATE: 2026-07-24 01:22 | VERSION: 0.4.4
+DATE: 2026-07-24 01:22 | VERSION: 0.4.5
 ========================================
 
 --- CLIPPY ERRORS ---
