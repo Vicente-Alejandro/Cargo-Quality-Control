@@ -10,6 +10,11 @@ readme = "README.md"
 keywords = ["cli", "cargo-subcommand", "quality-control", "automation"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
+exclude = [
+    "/.agents",
+    "/.github"
+]
+
 [dependencies]
 colored = "2.1"
 chrono = "0.4"
