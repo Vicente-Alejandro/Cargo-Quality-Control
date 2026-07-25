@@ -1,4 +1,5 @@
 /target
+/.cargo/credentials.toml
 .qc_errors.log
 .qc_history.md
 tools/cargo-qc/
