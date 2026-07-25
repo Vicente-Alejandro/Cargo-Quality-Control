@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.4.5
+# Cargo Quality Control v0.4.6
 
 **Local quality control automation for Rust projects.**
 
@@ -182,7 +182,7 @@ Structured error output, written only when at least one check fails. Previous er
 
 ```text
 ========================================
-DATE: 2026-07-24 01:22 | VERSION: 0.4.5
+DATE: 2026-07-24 01:22 | VERSION: 0.4.6
 ========================================
 
 --- CLIPPY ERRORS ---
