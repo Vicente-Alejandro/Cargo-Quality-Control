@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.4.6
+# Cargo Quality Control v0.4.8
 
 **Local quality control automation for Rust projects.**
 
