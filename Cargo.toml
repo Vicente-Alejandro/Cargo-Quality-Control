@@ -22,6 +22,6 @@ exclude = [
 # Lightweight ANSI colouring — zero transitive dependencies
 owo-colors = "4"
 # Date/time formatting — minimal features only, no wasm-bindgen / js-sys
-time = { version = "0.3", default-features = false, features = ["formatting", "local-offset", "macros"] }
+time = { version = "0.3", default-features = false, features = ["local-offset"] }
 # Application-layer error context (zero deps)
 anyhow = "1.0"

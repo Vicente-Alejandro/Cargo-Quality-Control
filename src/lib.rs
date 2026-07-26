@@ -12,7 +12,6 @@ use std::fs::{self, OpenOptions};
 use std::io::{self, BufRead, Read, Write};
 use std::process::Command;
 use time::OffsetDateTime;
-use time::format_description;
 
 const PREFIX: &str = "[cargo-qc]";
 const CHECK_LABEL_WIDTH: usize = 34;
@@ -256,13 +255,16 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
         .filter(|passed| !**passed)
         .count();
 
-    // Format timestamp using `time` crate (no wasm-bindgen involved).
-    let format = format_description::parse_borrowed::<2>("[year]-[month]-[day] [hour]:[minute]")
-        .expect("invalid time format description");
-    let date = OffsetDateTime::now_local()
-        .unwrap_or_else(|_| OffsetDateTime::now_utc())
-        .format(&format)
-        .unwrap_or_else(|_| "unknown".to_string());
+    // Format timestamp manually to avoid pulling time's "formatting" and "parsing" features.
+    let dt = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+    let date = format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}",
+        dt.year(),
+        u8::from(dt.month()),
+        dt.day(),
+        dt.hour(),
+        dt.minute()
+    );
 
     let icon = |pass: bool| if pass { "✅" } else { "❌" };
 
