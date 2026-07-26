@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.5.0
+# Cargo Quality Control v0.5.1
 
 **Local quality control automation for Rust projects.**
 
@@ -162,9 +162,10 @@ The log directory is designed to be committed alongside your code for auditabili
 [cargo-qc] Project: my-project v1.2.0
 [cargo-qc] Running cargo fmt --check ...   ✅
 [cargo-qc] Running cargo clippy ...        ❌
+hint: run 'cargo clippy --fix' to automatically resolve warnings.
 [cargo-qc] Running cargo build ...         ✅
 [cargo-qc] Running cargo test ...          ✅
-[cargo-qc] 1 check(s) failed. See tools/cargo-qc/.qc_errors.log for details.
+error: 1 check(s) failed. See tools/cargo-qc/.qc_errors.log for details.
 ```
 
 ### `tools/cargo-qc/.qc_history.md`
@@ -183,7 +184,7 @@ Structured error output, written only when at least one check fails. Previous er
 
 ```text
 ========================================
-DATE: 2026-07-25 18:20 | VERSION: 0.5.0
+DATE: 2026-07-25 18:20 | VERSION: 0.5.1
 ========================================
 
 --- CLIPPY ERRORS ---
