@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.4.8
+# Cargo Quality Control v0.5.0
 
 **Local quality control automation for Rust projects.**
 
@@ -56,7 +56,7 @@ Running `cargo fmt --check`, `cargo clippy -- -D warnings`, and `cargo build` in
 - **Pre-commit discipline** — a single command to run all three gates locally, in the correct order, with a consistent set of flags.
 - **Auditable history** — every run is appended to a Markdown table with timestamp and crate version. The file lives in your repository, travels with the code, and survives CI provider changes.
 - **Immediate error visibility** — failures are saved to a structured log file with the exact compiler output, separated by check type. No scrolling through interleaved terminal output.
-- **Zero configuration** — works in any Rust project without setup. No config files, no environment variables.
+- **Zero configuration & Ultra-slim** — works in any Rust project without setup. The binary itself has zero heavyweight dependencies, parsing arguments and drawing spinners natively to compile in under 20 seconds.
 
 ---
 
@@ -118,7 +118,8 @@ You can customize the pipeline execution with the following flags:
 | `--skip-clippy` | Skip the `cargo clippy` linter |
 | `--skip-build` | Skip the `cargo build` compilation |
 | `--skip-test` | Skip the `cargo test` execution |
-| `--ci` | Run in non-interactive CI mode (suppresses the `.gitignore` prompt) |
+| `--ci` | Run in non-interactive CI mode (suppresses the `.gitignore` prompt and animations) |
+| `--no-color` | Disable colored output (also respects `NO_COLOR` env var) |
 
 Example:
 ```bash
@@ -182,7 +183,7 @@ Structured error output, written only when at least one check fails. Previous er
 
 ```text
 ========================================
-DATE: 2026-07-24 01:22 | VERSION: 0.4.6
+DATE: 2026-07-25 18:20 | VERSION: 0.5.0
 ========================================
 
 --- CLIPPY ERRORS ---

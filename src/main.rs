@@ -15,6 +15,7 @@ OPTIONS:
         --skip-build     Skip cargo build check
         --skip-test      Skip cargo test check
         --ci             Run in CI mode (suppress interactive prompts)
+        --no-color       Disable colored output (also respects NO_COLOR env var)
     -h, --help           Print help information
     -V, --version        Print version information
 ";
@@ -36,6 +37,7 @@ fn main() {
             "--skip-build" => options.skip_build = true,
             "--skip-test" => options.skip_test = true,
             "--ci" => options.ci = true,
+            "--no-color" => options.no_color = true,
             "-h" | "--help" => {
                 print!("{}", HELP);
                 std::process::exit(0);
@@ -61,6 +63,10 @@ fn main() {
         for arg in args {
             process_arg(&arg);
         }
+    }
+
+    if std::env::var("NO_COLOR").is_ok() {
+        options.no_color = true;
     }
 
     if let Err(e) = cargo_qc::run(options) {
