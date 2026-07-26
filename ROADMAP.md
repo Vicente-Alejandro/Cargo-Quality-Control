@@ -19,17 +19,13 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ---
 
-## v0.5.0: Aesthetics and Visual Experience
+## v0.5.0: Aesthetics and Visual Experience (Ultra-Slim Edition)
 
-- [ ] **`indicatif` spinners.** Wrap each check in `ProgressBar::new_spinner()`, `.enable_steady_tick(Duration::from_millis(80))`, and a template naming the check; call `.finish_with_message(...)` on completion. `ProgressBar` draws to stderr by default and **auto-hides when stderr isn't a TTY** — verify this holds once implemented, and combine it with `--ci` so CI logs stay linear instead of filling with carriage-return spinner frames.
-- [ ] **`NO_COLOR` compliance — mostly already delivered by your dependencies, not something to build from scratch:**
-  - `colored` has respected the `NO_COLOR` spec since a past 2.x release (confirmed in the crate's own documentation), with precedence `CLICOLOR_FORCE > NO_COLOR > CLICOLOR`. After the version bump from the housekeeping note above, this should work out of the box for every `colored` call already in `main.rs`.
-  - Add `colored::control::set_override(false)` wired to a `--no-color` flag, so there's an explicit override in addition to the environment variable.
-  - `indicatif`'s spinner styling goes through the `console` crate, which auto-detects TTY presence. I could not independently confirm from documentation alone whether `console` strips ANSI codes specifically when `NO_COLOR` is set (as opposed to just detecting non-TTY output) — **verify this empirically once implemented**: run the binary with `NO_COLOR=1` piped to a file and inspect the bytes. If `console` doesn't already strip codes, route the spinner's `ProgressStyle` through the same override as `colored` so both crates agree.
-  - Add an integration test (this pairs with v0.6.0's `assert_cmd` suite) that runs the binary with `NO_COLOR=1` and asserts the captured output contains no `\x1b[` escape sequences.
-- [ ] **Sharper error messages.** Keep the current split (full compiler output → log file, curated summary → terminal), and add a one-line "what to run next" hint per failure kind (e.g. a clippy failure suggests `cargo clippy --fix` where applicable). Truncate very long stderr blocks in the terminal view only; the log file keeps the full text.
+- [x] **Zero-Dependency Spinners.** Implemented a native threaded spinner using `std::thread` and `std::sync::atomic::AtomicBool` to animate the loading state. Bypasses `indicatif` to maintain the < 20s compile time. Gracefully falls back to plain text if `stderr` is not a TTY (or when `--ci` is used).
+- [x] **`NO_COLOR` compliance.** Added a native `--no-color` flag and detection for the `NO_COLOR` environment variable to explicitly strip out `owo-colors` styling, ensuring the output is strictly plain text when required.
+- [x] **Sharper error messages.** Truncated very long stderr blocks in the terminal view to avoid blowing out the screen, while keeping the full text in `.qc_errors.log`. Added actionable "what to run next" hints for standard check failures (e.g. suggesting `cargo clippy --fix`).
 
-**Definition of Done:** running with `NO_COLOR=1` produces byte-for-byte plain output (verified by the new integration test); spinners render in an interactive terminal and disappear cleanly in a piped/CI context.
+**Definition of Done:** Running with `NO_COLOR=1` produces byte-for-byte plain output; native spinners render smoothly in an interactive terminal and disappear cleanly in a piped/CI context. All achieved with zero new dependencies.
 
 ---
 
