@@ -1,47 +1,67 @@
 use cargo_qc::QcOptions;
 use cargo_qc::log_error;
-use clap::Parser;
 
-#[derive(Parser, Debug)]
-#[command(name = "cargo", bin_name = "cargo")]
-enum CargoCli {
-    Qc(QcCli),
-}
+const HELP: &str = "\
+cargo-qc
 
-#[derive(clap::Args, Debug)]
-#[command(author, version, about, long_about = None)]
-struct QcCli {
-    /// Skip cargo fmt check
-    #[arg(long)]
-    skip_fmt: bool,
+A custom cargo command for quality control (fmt, clippy, test etc)
 
-    /// Skip cargo clippy check
-    #[arg(long)]
-    skip_clippy: bool,
+USAGE:
+    cargo qc [OPTIONS]
 
-    /// Skip cargo build check
-    #[arg(long)]
-    skip_build: bool,
-
-    /// Skip cargo test check
-    #[arg(long)]
-    skip_test: bool,
-
-    /// Run in CI mode (suppress interactive prompts)
-    #[arg(long)]
-    ci: bool,
-}
+OPTIONS:
+        --skip-fmt       Skip cargo fmt check
+        --skip-clippy    Skip cargo clippy check
+        --skip-build     Skip cargo build check
+        --skip-test      Skip cargo test check
+        --ci             Run in CI mode (suppress interactive prompts)
+    -h, --help           Print help information
+    -V, --version        Print version information
+";
 
 fn main() {
-    let CargoCli::Qc(cli) = CargoCli::parse();
+    let mut options = QcOptions::default();
 
-    let options = QcOptions {
-        skip_fmt: cli.skip_fmt,
-        skip_clippy: cli.skip_clippy,
-        skip_build: cli.skip_build,
-        skip_test: cli.skip_test,
-        ci: cli.ci,
-    };
+    // Iterator over arguments skipping the executable name.
+    let mut args = std::env::args().skip(1);
+
+    if let Some(first) = args.next() {
+        // Cargo passes the subcommand name "qc" as the first argument to the plugin.
+        // E.g., `cargo qc --ci` becomes `cargo-qc qc --ci`.
+        let is_qc_subcommand = first == "qc";
+
+        let mut process_arg = |arg: &str| match arg {
+            "--skip-fmt" => options.skip_fmt = true,
+            "--skip-clippy" => options.skip_clippy = true,
+            "--skip-build" => options.skip_build = true,
+            "--skip-test" => options.skip_test = true,
+            "--ci" => options.ci = true,
+            "-h" | "--help" => {
+                print!("{}", HELP);
+                std::process::exit(0);
+            }
+            "-V" | "--version" => {
+                println!("cargo-qc {}", env!("CARGO_PKG_VERSION"));
+                std::process::exit(0);
+            }
+            _ => {
+                eprintln!(
+                    "error: Found argument '{}' which wasn't expected, or isn't valid in this context",
+                    arg
+                );
+                eprintln!("\nUSAGE:\n    cargo qc [OPTIONS]");
+                eprintln!("\nFor more information try --help");
+                std::process::exit(1);
+            }
+        };
+
+        if !is_qc_subcommand {
+            process_arg(&first);
+        }
+        for arg in args {
+            process_arg(&arg);
+        }
+    }
 
     if let Err(e) = cargo_qc::run(options) {
         log_error(e);

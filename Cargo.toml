@@ -25,7 +25,3 @@ owo-colors = "4"
 time = { version = "0.3", default-features = false, features = ["formatting", "local-offset", "macros"] }
 # Application-layer error context (zero deps)
 anyhow = "1.0"
-# Typed, matchable library errors (compile-time only proc-macro, shared with clap_derive)
-thiserror = "1.0"
-# CLI argument parsing (derive API)
-clap = { version = "4.4", features = ["derive"] }

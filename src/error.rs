@@ -1,51 +1,83 @@
-use thiserror::Error;
+use std::fmt;
 
 /// The error type for `cargo-qc` operations.
 /// Represents all possible failure modes when executing the quality control pipeline.
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum QcError {
     /// Failed to execute the `cargo pkgid` command.
-    #[error("could not detect project version: {0}")]
-    VersionDetection(#[from] std::io::Error),
+    VersionDetection(std::io::Error),
 
     /// The output of `cargo pkgid` was not in the expected format.
-    #[error("failed to parse cargo pkgid output")]
     VersionParse,
 
     /// Failed to create the `tools/cargo-qc` directory.
-    #[error("failed to create log directory: {0}")]
     LogDirectoryCreation(std::io::Error),
 
     /// The `cargo fmt` check failed to execute.
-    #[error("failed to run cargo fmt: {0}")]
     FmtCheck(std::io::Error),
 
     /// The `cargo clippy` check failed to execute.
-    #[error("failed to run cargo clippy: {0}")]
     ClippyCheck(std::io::Error),
 
     /// The `cargo build` command failed to execute.
-    #[error("failed to run cargo build: {0}")]
     BuildCheck(std::io::Error),
 
     /// The `cargo test` command failed to execute.
-    #[error("failed to run cargo test: {0}")]
     TestCheck(std::io::Error),
 
     /// Failed to write to `.qc_history.md`.
-    #[error("failed to open history file: {0}")]
     HistoryFile(std::io::Error),
 
     /// Failed to write to `.qc_errors.log`.
-    #[error("failed to open errors file: {0}")]
     ErrorsFile(std::io::Error),
 
     /// One or more quality control checks failed. This is the normal failure state when code is incorrect.
-    #[error("{failed_count} check(s) failed. See {log_path} for details.")]
     ChecksFailed {
         /// Number of checks that failed.
         failed_count: usize,
         /// Path to the error log file.
         log_path: String,
     },
+}
+
+impl fmt::Display for QcError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            QcError::VersionDetection(e) => write!(f, "could not detect project version: {}", e),
+            QcError::VersionParse => write!(f, "failed to parse cargo pkgid output"),
+            QcError::LogDirectoryCreation(e) => write!(f, "failed to create log directory: {}", e),
+            QcError::FmtCheck(e) => write!(f, "failed to run cargo fmt: {}", e),
+            QcError::ClippyCheck(e) => write!(f, "failed to run cargo clippy: {}", e),
+            QcError::BuildCheck(e) => write!(f, "failed to run cargo build: {}", e),
+            QcError::TestCheck(e) => write!(f, "failed to run cargo test: {}", e),
+            QcError::HistoryFile(e) => write!(f, "failed to open history file: {}", e),
+            QcError::ErrorsFile(e) => write!(f, "failed to open errors file: {}", e),
+            QcError::ChecksFailed {
+                failed_count,
+                log_path,
+            } => {
+                write!(
+                    f,
+                    "{} check(s) failed. See {} for details.",
+                    failed_count, log_path
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for QcError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            QcError::VersionDetection(e)
+            | QcError::LogDirectoryCreation(e)
+            | QcError::FmtCheck(e)
+            | QcError::ClippyCheck(e)
+            | QcError::BuildCheck(e)
+            | QcError::TestCheck(e)
+            | QcError::HistoryFile(e)
+            | QcError::ErrorsFile(e) => Some(e),
+            QcError::VersionParse | QcError::ChecksFailed { .. } => None,
+        }
+    }
 }
