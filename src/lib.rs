@@ -4,15 +4,15 @@
 /// Error definitions for the cargo-qc pipeline.
 pub mod error;
 
-use chrono::Local;
-use colored::*;
-use dialoguer::{Select, theme::ColorfulTheme};
 use error::QcError;
+use owo_colors::OwoColorize;
 use std::env;
 use std::fmt::Display;
 use std::fs::{self, OpenOptions};
-use std::io::{Read, Write};
+use std::io::{self, BufRead, Read, Write};
 use std::process::Command;
+use time::OffsetDateTime;
+use time::format_description;
 
 const PREFIX: &str = "[cargo-qc]";
 const CHECK_LABEL_WIDTH: usize = 34;
@@ -36,6 +36,39 @@ pub fn log_error(message: impl Display) {
 /// Logs a warning message in yellow.
 pub fn log_warning(message: impl Display) {
     println!("{} {message}", "warning:".yellow().bold());
+}
+
+/// Prompts the user with a `[Y/n]` question on stdout.
+///
+/// Accepted inputs:
+/// - `y`, `Y`, a single space `' '`, or an empty Enter → returns `true` (yes)
+/// - `n` or `N` → returns `false` (no)
+/// - Any other input → re-prompts until a valid answer is given
+fn prompt_yes_no(question: &str) -> bool {
+    let stdin = io::stdin();
+    loop {
+        print!("{} {} [Y/n]: ", PREFIX.dimmed(), question);
+        io::stdout().flush().expect("failed to flush stdout");
+
+        let mut line = String::new();
+        stdin
+            .lock()
+            .read_line(&mut line)
+            .expect("failed to read stdin");
+
+        // Trim the trailing newline/carriage-return but preserve a lone space.
+        let trimmed = line.trim_end_matches(['\n', '\r']);
+
+        match trimmed {
+            // Empty Enter or a single space → YES (matches the capital Y in the prompt)
+            "" | " " => return true,
+            s if s.eq_ignore_ascii_case("y") => return true,
+            s if s.eq_ignore_ascii_case("n") => return false,
+            _ => {
+                println!("{} Please enter Y (yes) or N (no).", "hint:".yellow());
+            }
+        }
+    }
 }
 
 /// Configuration options for the quality control pipeline.
@@ -109,33 +142,19 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
 
         if needs_ignore && !options.ci {
             log_warning("tools/cargo-qc/ is not in your .gitignore yet.");
-            let selections = &["Yes, add it to .gitignore", "No, let me track it"];
 
-            let selection = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("Automatically ignore the cargo-qc log directory?")
-                .default(0)
-                .items(&selections[..])
-                .interact_opt()
-                .unwrap_or(None);
-
-            match selection {
-                Some(0) => {
-                    if let Ok(mut file) = OpenOptions::new()
-                        .create(true)
-                        .append(true)
-                        .open(&gitignore_path)
-                    {
-                        let _ = writeln!(file, "\n# cargo-qc logs\ntools/cargo-qc/");
-                        log_line("Added tools/cargo-qc/ to .gitignore.");
-                    }
+            if prompt_yes_no("Automatically add tools/cargo-qc/ to .gitignore?") {
+                if let Ok(mut file) = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(&gitignore_path)
+                {
+                    let _ = writeln!(file, "\n# cargo-qc logs\ntools/cargo-qc/");
+                    log_line("Added tools/cargo-qc/ to .gitignore.");
                 }
-                Some(1) => {
-                    let _ = fs::File::create(&skip_prompt_path);
-                    log_line("Understood — this won't be asked again.");
-                }
-                _ => {
-                    log_line("Skipped — this will be asked again next run.");
-                }
+            } else {
+                let _ = fs::File::create(&skip_prompt_path);
+                log_line("Understood — this won't be asked again.");
             }
         }
     }
@@ -237,7 +256,14 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
         .filter(|passed| !**passed)
         .count();
 
-    let date = Local::now().format("%Y-%m-%d %H:%M").to_string();
+    // Format timestamp using `time` crate (no wasm-bindgen involved).
+    let format = format_description::parse_borrowed::<2>("[year]-[month]-[day] [hour]:[minute]")
+        .expect("invalid time format description");
+    let date = OffsetDateTime::now_local()
+        .unwrap_or_else(|_| OffsetDateTime::now_utc())
+        .format(&format)
+        .unwrap_or_else(|_| "unknown".to_string());
+
     let icon = |pass: bool| if pass { "✅" } else { "❌" };
 
     if let Ok(mut file) = OpenOptions::new().append(true).open(&history_file) {
