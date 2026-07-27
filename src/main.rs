@@ -1,4 +1,4 @@
-use cargo_qc::QcOptions;
+use cargo_qc::config::QcOptions;
 use cargo_qc::log_error;
 
 const HELP: &str = "\

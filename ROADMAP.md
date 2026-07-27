@@ -54,6 +54,24 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ---
 
+## v0.6.3: Refactorización y Resiliencia (QA Fase 1)
+
+- [ ] **Arquitectura Modular.** Dividir `lib.rs` en módulos (`config.rs`, `history.rs`, `runner.rs`, `telemetry.rs`) para cumplir con los principios de SIG (unidades de código cortas e interfaces pequeñas).
+- [ ] **Resiliencia.** Manejo de errores seguro para la lectura de `stdin` y validación de la existencia de `curl` antes de intentar telemetría.
+
+**Definition of Done:** `cargo qc` funciona idénticamente, pero internamente el código está modularizado y no produce `panics` en entornos sin TTY.
+
+---
+
+## v0.6.4: Cobertura de Pruebas (QA Fase 2)
+
+- [ ] **Tests de Integración.** Configurar el crate `assert_cmd` como dependencia de desarrollo (`dev-dependencies`) para simular comandos de consola y probar escenarios de salida, fallos y telemetría.
+- [ ] **Tests Unitarios.** Pruebas para parseo, utilidades y configuración.
+
+**Definition of Done:** Se cuenta con un suite de pruebas en `tests/` que pasa exitosamente con `cargo test`.
+
+---
+
 ## v0.7.0: Open Source Standardization
 
 - [ ] **`git-cliff` + `cliff.toml`** with `conventional_commits = true` and `commit_parsers` grouping (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`) for automated `CHANGELOG.md` generation. This implies adopting Conventional Commits going forward, which lines up with your `atomic-commits` and `semver-tagging` conventions.
