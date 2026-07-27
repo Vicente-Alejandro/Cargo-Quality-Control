@@ -161,12 +161,15 @@ The log directory is designed to be committed alongside your code for auditabili
 ### Terminal output
 
 ```text
+[cargo-qc] Local Quality Control
 [cargo-qc] Project: my-project v0.6.4
-[cargo-qc] Running cargo fmt --check ...   ✅
-[cargo-qc] Running cargo clippy ...        ❌
-hint: run 'cargo clippy --fix' to automatically resolve warnings.
-[cargo-qc] Running cargo build ...         ✅
-[cargo-qc] Running cargo test ...          ✅
+[cargo-qc] Directory: /path/to/my-project
+[cargo-qc] Running cargo fmt --check ... ❌
+
+hint: run 'cargo fmt' to format the code.
+[cargo-qc] Running cargo clippy ... ✅
+[cargo-qc] Running cargo build ... ✅
+[cargo-qc] Running cargo test ... ✅
 error: 1 check(s) failed. See tools/cargo-qc/.qc_errors.log for details.
 ```
 
