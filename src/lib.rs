@@ -14,6 +14,7 @@ use std::fmt::Display;
 use std::fs::{self, OpenOptions};
 use std::io::{self, BufRead, Read, Write};
 use std::process::Command;
+use std::time::Instant;
 use time::OffsetDateTime;
 
 const PREFIX: &str = "[cargo-qc]";
@@ -134,6 +135,7 @@ pub struct QcOptions {
 /// Runs the configured quality gates (fmt, clippy, build, test) sequentially,
 /// writes the results to `.qc_history.md`, and saves any errors to `.qc_errors.log`.
 pub fn run(options: QcOptions) -> anyhow::Result<()> {
+    let start_time = Instant::now();
     set_no_color(options.no_color);
     let is_tty = std::io::IsTerminal::is_terminal(&std::io::stdout());
     let disable_spinners = options.ci || !is_tty;
@@ -226,9 +228,9 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
         let _ = writeln!(file, "# Cargo QC History\n");
         let _ = writeln!(
             file,
-            "| Date | Version | Fmt | Clippy | Build | Test | Overall |"
+            "| Date | Version | Fmt | Clippy | Build | Test | Overall | Duration |"
         );
-        let _ = writeln!(file, "|---|---|---|---|---|---|---|");
+        let _ = writeln!(file, "|---|---|---|---|---|---|---|---|");
     }
 
     let mut err_log = String::new();
@@ -281,17 +283,21 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
 
     let icon = |pass: bool| if pass { "✅" } else { "❌" };
 
+    let duration = start_time.elapsed();
+    let duration_str = format!("{:.1}s", duration.as_secs_f64());
+
     if let Ok(mut file) = OpenOptions::new().append(true).open(&history_file) {
         let _ = writeln!(
             file,
-            "| {} | `{}` | {} | {} | {} | {} | {} |",
+            "| {} | `{}` | {} | {} | {} | {} | {} | {} |",
             date,
             version,
             icon(fmt_pass),
             icon(clippy_pass),
             icon(build_pass),
             icon(test_pass),
-            icon(all_passed)
+            icon(all_passed),
+            duration_str
         );
     }
 
