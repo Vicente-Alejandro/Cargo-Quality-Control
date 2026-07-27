@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.6.3
+# Cargo Quality Control v0.6.4
 
 **Local quality control automation for Rust projects.**
 
@@ -161,7 +161,7 @@ The log directory is designed to be committed alongside your code for auditabili
 ### Terminal output
 
 ```text
-[cargo-qc] Project: my-project v0.6.3
+[cargo-qc] Project: my-project v0.6.4
 [cargo-qc] Running cargo fmt --check ...   ✅
 [cargo-qc] Running cargo clippy ...        ❌
 hint: run 'cargo clippy --fix' to automatically resolve warnings.
@@ -186,7 +186,7 @@ Structured error output, written only when at least one check fails. Previous er
 
 ```text
 ========================================
-DATE: 2026-07-27 12:00 | VERSION: 0.6.3
+DATE: 2026-07-27 12:00 | VERSION: 0.6.4
 ========================================
 
 --- CLIPPY ERRORS ---
