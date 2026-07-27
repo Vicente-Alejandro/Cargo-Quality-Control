@@ -4,3 +4,4 @@
 .qc_history.md
 tools/cargo-qc/
 develop.t
+test_server.py
