@@ -128,6 +128,8 @@ pub struct QcOptions {
     pub no_color: bool,
     /// Enable strict maintainability lints (SIG).
     pub strict: bool,
+    /// Send execution telemetry to a URL.
+    pub telemetry: Option<String>,
 }
 
 /// Main entry point for the `cargo qc` library.
@@ -299,6 +301,33 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
             icon(all_passed),
             duration_str
         );
+    }
+
+    if let Some(telemetry_url) = options.telemetry {
+        let json_payload = format!(
+            r#"{{"version":"{}","fmt_pass":{},"clippy_pass":{},"build_pass":{},"test_pass":{},"all_passed":{},"duration_sec":{:.1}}}"#,
+            version,
+            fmt_pass,
+            clippy_pass,
+            build_pass,
+            test_pass,
+            all_passed,
+            duration.as_secs_f64()
+        );
+
+        // Fire-and-forget telemetry via curl
+        let _ = Command::new("curl")
+            .arg("-X")
+            .arg("POST")
+            .arg("-H")
+            .arg("Content-Type: application/json")
+            .arg("-d")
+            .arg(&json_payload)
+            .arg("--silent")
+            .arg("--max-time")
+            .arg("3")
+            .arg(&telemetry_url)
+            .status();
     }
 
     if !all_passed {

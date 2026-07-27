@@ -40,7 +40,7 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ## v0.6.1: Métricas de Entrega (DORA Metrics)
 
-- [ ] **Registro de Duración.** Registrar en `.qc_history.md` el tiempo de ejecución de las pruebas y verificaciones, sirviendo como base de datos local para calcular el *Lead Time* y el *Change Failure Rate* del desarrollador (*Accelerate*).
+- [x] **Registro de Duración.** Registrar en `.qc_history.md` el tiempo de ejecución de las pruebas y verificaciones, sirviendo como base de datos local para calcular el *Lead Time* y el *Change Failure Rate* del desarrollador (*Accelerate*).
 
 **Definition of Done:** `.qc_history.md` incluye columnas de tiempo/duración de la ejecución.
 
@@ -48,7 +48,7 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ## v0.6.2: Auditoría Continua y Telemetría
 
-- [ ] **Auditoría Continua.** Pasar de auditoría aislada a auditoría continua (*EBSCO / CISA*). Introducir un modo oculto `--telemetry <URL>`. Tras finalizar la ejecución, se enviará de forma asíncrona un payload JSON al servidor indicado con el resultado de la corrida.
+- [x] **Auditoría Continua.** Pasar de auditoría aislada a auditoría continua (*EBSCO / CISA*). Introducir un modo oculto `--telemetry <URL>`. Tras finalizar la ejecución, se enviará de forma asíncrona un payload JSON al servidor indicado con el resultado de la corrida.
 
 **Definition of Done:** Ejecutar `cargo qc --telemetry http://localhost:8080` envía un POST JSON exitoso con el reporte de la ejecución.
 

@@ -17,6 +17,7 @@ OPTIONS:
         --ci             Run in CI mode (suppress interactive prompts and animations)
         --no-color       Disable colored output (also respects NO_COLOR env var)
         --strict         Enable SIG maintainability lints (also respects QC_STRICT env var)
+        --telemetry URL  Send a JSON payload to the specified URL after execution
     -h, --help           Print help information
     -V, --version        Print version information
 ";
@@ -32,30 +33,43 @@ fn main() {
         // E.g., `cargo qc --ci` becomes `cargo-qc qc --ci`.
         let is_qc_subcommand = first == "qc";
 
-        let mut process_arg = |arg: &str| match arg {
-            "--skip-fmt" => options.skip_fmt = true,
-            "--skip-clippy" => options.skip_clippy = true,
-            "--skip-build" => options.skip_build = true,
-            "--skip-test" => options.skip_test = true,
-            "--ci" => options.ci = true,
-            "--no-color" => options.no_color = true,
-            "--strict" => options.strict = true,
-            "-h" | "--help" => {
-                print!("{}", HELP);
-                std::process::exit(0);
+        let mut next_is_telemetry = false;
+
+        let mut process_arg = |arg: &str| {
+            if next_is_telemetry {
+                options.telemetry = Some(arg.to_string());
+                next_is_telemetry = false;
+                return;
             }
-            "-V" | "--version" => {
-                println!("cargo-qc {}", env!("CARGO_PKG_VERSION"));
-                std::process::exit(0);
-            }
-            _ => {
-                eprintln!(
-                    "error: Found argument '{}' which wasn't expected, or isn't valid in this context",
-                    arg
-                );
-                eprintln!("\nUSAGE:\n    cargo qc [OPTIONS]");
-                eprintln!("\nFor more information try --help");
-                std::process::exit(1);
+
+            match arg {
+                "--skip-fmt" => options.skip_fmt = true,
+                "--skip-clippy" => options.skip_clippy = true,
+                "--skip-build" => options.skip_build = true,
+                "--skip-test" => options.skip_test = true,
+                "--ci" => options.ci = true,
+                "--no-color" => options.no_color = true,
+                "--strict" => options.strict = true,
+                "--telemetry" => {
+                    next_is_telemetry = true;
+                }
+                "-h" | "--help" => {
+                    print!("{}", HELP);
+                    std::process::exit(0);
+                }
+                "-V" | "--version" => {
+                    println!("cargo-qc {}", env!("CARGO_PKG_VERSION"));
+                    std::process::exit(0);
+                }
+                _ => {
+                    eprintln!(
+                        "error: Found argument '{}' which wasn't expected, or isn't valid in this context",
+                        arg
+                    );
+                    eprintln!("\nUSAGE:\n    cargo qc [OPTIONS]");
+                    eprintln!("\nFor more information try --help");
+                    std::process::exit(1);
+                }
             }
         };
 
@@ -64,6 +78,11 @@ fn main() {
         }
         for arg in args {
             process_arg(&arg);
+        }
+
+        if next_is_telemetry {
+            eprintln!("error: The argument '--telemetry' requires a value but none was supplied");
+            std::process::exit(1);
         }
     }
 
