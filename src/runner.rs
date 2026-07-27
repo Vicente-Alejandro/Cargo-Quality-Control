@@ -39,9 +39,9 @@ pub fn run_fmt(err_log: &mut String, disable_spinners: bool, no_color_opt: bool)
         let term_err = truncate_for_term(&String::from_utf8_lossy(&fmt_output.stderr));
         eprintln!("{}", term_err);
         if no_color() {
-            eprintln!("hint: run 'cargo fmt' to format the code.");
+            eprintln!("hint: run 'cargo fmt' to automatically fix formatting issues.");
         } else {
-            eprintln!("{}", "hint: run 'cargo fmt' to format the code.".yellow());
+            eprintln!("{}", "hint: run 'cargo fmt' to automatically fix formatting issues.".yellow());
         }
     }
     pass
