@@ -7,8 +7,8 @@ pub mod error;
 pub mod spinner;
 
 use error::QcError;
-use spinner::Spinner;
 use owo_colors::OwoColorize;
+use spinner::Spinner;
 use std::env;
 use std::fmt::Display;
 use std::fs::{self, OpenOptions};
@@ -125,6 +125,8 @@ pub struct QcOptions {
     pub ci: bool,
     /// Disable colored output.
     pub no_color: bool,
+    /// Enable strict maintainability lints (SIG).
+    pub strict: bool,
 }
 
 /// Main entry point for the `cargo qc` library.
@@ -214,18 +216,6 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
 
     let history_file = log_dir.join(".qc_history.md");
     let errors_file = log_dir.join(".qc_errors.log");
-    
-    // Function to truncate terminal output while keeping logs full
-    let truncate_for_term = |output: &str| -> String {
-        let lines: Vec<&str> = output.lines().collect();
-        if lines.len() > 15 {
-            let mut truncated = lines[0..15].join("\n");
-            truncated.push_str("\n... (output truncated, see logs for full details)");
-            truncated
-        } else {
-            output.to_string()
-        }
-    };
 
     if !history_file.exists()
         && let Ok(mut file) = OpenOptions::new()
@@ -242,107 +232,35 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
     }
 
     let mut err_log = String::new();
-    let mut fmt_pass = true;
-    let mut clippy_pass = true;
-    let mut build_pass = true;
-    let mut test_pass = true;
 
-    if !options.skip_fmt {
-        let spinner = Spinner::start("Running cargo fmt --check", disable_spinners, options.no_color);
-        let fmt_output = Command::new("cargo")
-            .arg("fmt")
-            .arg("--")
-            .arg("--check")
-            .output()
-            .map_err(QcError::FmtCheck)?;
-        fmt_pass = fmt_output.status.success();
-        spinner.finish(fmt_pass);
-        if !fmt_pass {
-            err_log.push_str("--- FMT ERROR ---\n");
-            err_log.push_str(&String::from_utf8_lossy(&fmt_output.stdout));
-            err_log.push_str(&String::from_utf8_lossy(&fmt_output.stderr));
-            err_log.push('\n');
-            let term_err = truncate_for_term(&String::from_utf8_lossy(&fmt_output.stderr));
-            eprintln!("{}", term_err);
-            if no_color() {
-                eprintln!("hint: run 'cargo fmt' to format the code.");
-            } else {
-                eprintln!("{}", "hint: run 'cargo fmt' to format the code.".yellow());
-            }
-        }
-    }
+    let fmt_pass = if !options.skip_fmt {
+        run_fmt(&mut err_log, disable_spinners, options.no_color)
+    } else {
+        true
+    };
 
-    if !options.skip_clippy {
-        let spinner = Spinner::start("Running cargo clippy", disable_spinners, options.no_color);
-        let clippy_output = Command::new("cargo")
-            .arg("clippy")
-            .arg("--")
-            .arg("-D")
-            .arg("warnings")
-            .output()
-            .map_err(QcError::ClippyCheck)?;
-        clippy_pass = clippy_output.status.success();
-        spinner.finish(clippy_pass);
-        if !clippy_pass {
-            err_log.push_str("--- CLIPPY ERROR ---\n");
-            err_log.push_str(&String::from_utf8_lossy(&clippy_output.stdout));
-            err_log.push_str(&String::from_utf8_lossy(&clippy_output.stderr));
-            err_log.push('\n');
-            let term_err = truncate_for_term(&String::from_utf8_lossy(&clippy_output.stderr));
-            eprintln!("{}", term_err);
-            if no_color() {
-                eprintln!("hint: run 'cargo clippy --fix' to automatically resolve warnings.");
-            } else {
-                eprintln!("{}", "hint: run 'cargo clippy --fix' to automatically resolve warnings.".yellow());
-            }
-        }
-    }
+    let clippy_pass = if !options.skip_clippy {
+        run_clippy(
+            &mut err_log,
+            disable_spinners,
+            options.no_color,
+            options.strict,
+        )
+    } else {
+        true
+    };
 
-    if !options.skip_build {
-        let spinner = Spinner::start("Running cargo build", disable_spinners, options.no_color);
-        let build_output = Command::new("cargo")
-            .arg("build")
-            .output()
-            .map_err(QcError::BuildCheck)?;
-        build_pass = build_output.status.success();
-        spinner.finish(build_pass);
-        if !build_pass {
-            err_log.push_str("--- BUILD ERROR ---\n");
-            err_log.push_str(&String::from_utf8_lossy(&build_output.stdout));
-            err_log.push_str(&String::from_utf8_lossy(&build_output.stderr));
-            err_log.push('\n');
-            let term_err = truncate_for_term(&String::from_utf8_lossy(&build_output.stderr));
-            eprintln!("{}", term_err);
-            if no_color() {
-                eprintln!("hint: fix compiler errors above.");
-            } else {
-                eprintln!("{}", "hint: fix compiler errors above.".yellow());
-            }
-        }
-    }
+    let build_pass = if !options.skip_build {
+        run_build(&mut err_log, disable_spinners, options.no_color)
+    } else {
+        true
+    };
 
-    if !options.skip_test {
-        let spinner = Spinner::start("Running cargo test", disable_spinners, options.no_color);
-        let test_output = Command::new("cargo")
-            .arg("test")
-            .output()
-            .map_err(QcError::TestCheck)?;
-        test_pass = test_output.status.success();
-        spinner.finish(test_pass);
-        if !test_pass {
-            err_log.push_str("--- TEST ERROR ---\n");
-            err_log.push_str(&String::from_utf8_lossy(&test_output.stdout));
-            err_log.push_str(&String::from_utf8_lossy(&test_output.stderr));
-            err_log.push('\n');
-            let term_err = truncate_for_term(&String::from_utf8_lossy(&test_output.stderr));
-            eprintln!("{}", term_err);
-            if no_color() {
-                eprintln!("hint: review failing tests and try again.");
-            } else {
-                eprintln!("{}", "hint: review failing tests and try again.".yellow());
-            }
-        }
-    }
+    let test_pass = if !options.skip_test {
+        run_test(&mut err_log, disable_spinners, options.no_color)
+    } else {
+        true
+    };
 
     let all_passed = fmt_pass && clippy_pass && build_pass && test_pass;
     let failed_count = [fmt_pass, clippy_pass, build_pass, test_pass]
@@ -407,4 +325,149 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn truncate_for_term(output: &str) -> String {
+    let lines: Vec<&str> = output.lines().collect();
+    if lines.len() > 15 {
+        let mut truncated = lines[0..15].join("\n");
+        truncated.push_str("\n... (output truncated, see logs for full details)");
+        truncated
+    } else {
+        output.to_string()
+    }
+}
+
+fn run_fmt(err_log: &mut String, disable_spinners: bool, no_color_opt: bool) -> bool {
+    let spinner = Spinner::start("Running cargo fmt --check", disable_spinners, no_color_opt);
+    let output = Command::new("cargo")
+        .arg("fmt")
+        .arg("--")
+        .arg("--check")
+        .output();
+
+    let pass = match output {
+        Ok(ref out) => out.status.success(),
+        Err(_) => false,
+    };
+    spinner.finish(pass);
+
+    if let Ok(fmt_output) = output
+        && !pass
+    {
+        err_log.push_str("--- FMT ERROR ---\n");
+        err_log.push_str(&String::from_utf8_lossy(&fmt_output.stdout));
+        err_log.push_str(&String::from_utf8_lossy(&fmt_output.stderr));
+        err_log.push('\n');
+        let term_err = truncate_for_term(&String::from_utf8_lossy(&fmt_output.stderr));
+        eprintln!("{}", term_err);
+        if no_color() {
+            eprintln!("hint: run 'cargo fmt' to format the code.");
+        } else {
+            eprintln!("{}", "hint: run 'cargo fmt' to format the code.".yellow());
+        }
+    }
+    pass
+}
+
+fn run_clippy(
+    err_log: &mut String,
+    disable_spinners: bool,
+    no_color_opt: bool,
+    strict: bool,
+) -> bool {
+    let spinner = Spinner::start("Running cargo clippy", disable_spinners, no_color_opt);
+    let mut cmd = Command::new("cargo");
+    cmd.arg("clippy").arg("--").arg("-D").arg("warnings");
+    if strict {
+        cmd.arg("-D")
+            .arg("clippy::cognitive_complexity")
+            .arg("-D")
+            .arg("clippy::too_many_arguments")
+            .arg("-D")
+            .arg("clippy::type_complexity");
+    }
+    let output = cmd.output();
+
+    let pass = match output {
+        Ok(ref out) => out.status.success(),
+        Err(_) => false,
+    };
+    spinner.finish(pass);
+
+    if let Ok(clippy_output) = output
+        && !pass
+    {
+        err_log.push_str("--- CLIPPY ERROR ---\n");
+        err_log.push_str(&String::from_utf8_lossy(&clippy_output.stdout));
+        err_log.push_str(&String::from_utf8_lossy(&clippy_output.stderr));
+        err_log.push('\n');
+        let term_err = truncate_for_term(&String::from_utf8_lossy(&clippy_output.stderr));
+        eprintln!("{}", term_err);
+        if no_color() {
+            eprintln!("hint: run 'cargo clippy --fix' to automatically resolve warnings.");
+        } else {
+            eprintln!(
+                "{}",
+                "hint: run 'cargo clippy --fix' to automatically resolve warnings.".yellow()
+            );
+        }
+    }
+    pass
+}
+
+fn run_build(err_log: &mut String, disable_spinners: bool, no_color_opt: bool) -> bool {
+    let spinner = Spinner::start("Running cargo build", disable_spinners, no_color_opt);
+    let output = Command::new("cargo").arg("build").output();
+
+    let pass = match output {
+        Ok(ref out) => out.status.success(),
+        Err(_) => false,
+    };
+    spinner.finish(pass);
+
+    if let Ok(build_output) = output
+        && !pass
+    {
+        err_log.push_str("--- BUILD ERROR ---\n");
+        err_log.push_str(&String::from_utf8_lossy(&build_output.stdout));
+        err_log.push_str(&String::from_utf8_lossy(&build_output.stderr));
+        err_log.push('\n');
+        let term_err = truncate_for_term(&String::from_utf8_lossy(&build_output.stderr));
+        eprintln!("{}", term_err);
+        if no_color() {
+            eprintln!("hint: fix compiler errors above.");
+        } else {
+            eprintln!("{}", "hint: fix compiler errors above.".yellow());
+        }
+    }
+    pass
+}
+
+fn run_test(err_log: &mut String, disable_spinners: bool, no_color_opt: bool) -> bool {
+    let spinner = Spinner::start("Running cargo test", disable_spinners, no_color_opt);
+    let output = Command::new("cargo").arg("test").output();
+
+    let pass = match output {
+        Ok(ref out) => out.status.success(),
+        Err(_) => false,
+    };
+    spinner.finish(pass);
+
+    if let Ok(test_output) = output
+        && !pass
+    {
+        err_log.push_str("--- TEST ERROR ---\n");
+        err_log.push_str(&String::from_utf8_lossy(&test_output.stdout));
+        err_log.push_str(&String::from_utf8_lossy(&test_output.stderr));
+        err_log.push('\n');
+        let term_err = truncate_for_term(&String::from_utf8_lossy(&test_output.stderr));
+        eprintln!("{}", term_err);
+        if no_color() {
+            eprintln!("hint: review failing tests and try again.");
+        } else {
+            eprintln!("{}", "hint: review failing tests and try again.".yellow());
+        }
+    }
+    pass
 }

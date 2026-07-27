@@ -1,6 +1,6 @@
 <div align="center">
 
-# Cargo Quality Control v0.5.1
+# Cargo Quality Control v0.6.0
 
 **Local quality control automation for Rust projects.**
 
@@ -120,6 +120,7 @@ You can customize the pipeline execution with the following flags:
 | `--skip-test` | Skip the `cargo test` execution |
 | `--ci` | Run in non-interactive CI mode (suppresses the `.gitignore` prompt and animations) |
 | `--no-color` | Disable colored output (also respects `NO_COLOR` env var) |
+| `--strict` | Enable strict maintainability lints from SIG (also respects `QC_STRICT` env var) |
 
 Example:
 ```bash
@@ -159,7 +160,7 @@ The log directory is designed to be committed alongside your code for auditabili
 ### Terminal output
 
 ```text
-[cargo-qc] Project: my-project v1.2.0
+[cargo-qc] Project: my-project v0.6.0
 [cargo-qc] Running cargo fmt --check ...   ✅
 [cargo-qc] Running cargo clippy ...        ❌
 hint: run 'cargo clippy --fix' to automatically resolve warnings.
@@ -184,7 +185,7 @@ Structured error output, written only when at least one check fails. Previous er
 
 ```text
 ========================================
-DATE: 2026-07-25 18:20 | VERSION: 0.5.1
+DATE: 2026-07-27 12:00 | VERSION: 0.6.0
 ========================================
 
 --- CLIPPY ERRORS ---

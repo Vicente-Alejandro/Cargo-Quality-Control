@@ -14,8 +14,9 @@ OPTIONS:
         --skip-clippy    Skip cargo clippy check
         --skip-build     Skip cargo build check
         --skip-test      Skip cargo test check
-        --ci             Run in CI mode (suppress interactive prompts)
+        --ci             Run in CI mode (suppress interactive prompts and animations)
         --no-color       Disable colored output (also respects NO_COLOR env var)
+        --strict         Enable SIG maintainability lints (also respects QC_STRICT env var)
     -h, --help           Print help information
     -V, --version        Print version information
 ";
@@ -38,6 +39,7 @@ fn main() {
             "--skip-test" => options.skip_test = true,
             "--ci" => options.ci = true,
             "--no-color" => options.no_color = true,
+            "--strict" => options.strict = true,
             "-h" | "--help" => {
                 print!("{}", HELP);
                 std::process::exit(0);
@@ -67,6 +69,10 @@ fn main() {
 
     if std::env::var("NO_COLOR").is_ok() {
         options.no_color = true;
+    }
+
+    if std::env::var("QC_STRICT").is_ok() {
+        options.strict = true;
     }
 
     if let Err(e) = cargo_qc::run(options) {
