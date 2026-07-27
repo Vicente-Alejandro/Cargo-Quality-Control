@@ -15,7 +15,9 @@ exclude = [
     "/.agents",
     "/.github",
     "ROADMAP.md",
-    "develop.t"
+    "develop.t",
+    "test_server.py",
+    "/tools/"
 ]
 
 [dependencies]
