@@ -14,9 +14,9 @@ fn cargo_qc_cmd() -> Command {
 fn test_help() {
     let mut cmd = cargo_qc_cmd();
     cmd.arg("--help");
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("A custom cargo command for quality control"));
+    cmd.assert().success().stdout(predicate::str::contains(
+        "A custom cargo command for quality control",
+    ));
 }
 
 #[test]
@@ -32,17 +32,17 @@ fn test_version() {
 fn test_unknown_flag() {
     let mut cmd = cargo_qc_cmd();
     cmd.arg("--some-unknown-flag");
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("error: Found argument '--some-unknown-flag' which wasn't expected"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "error: Found argument '--some-unknown-flag' which wasn't expected",
+    ));
 }
 
 #[test]
 fn test_strict_mode() {
     let mut cmd = cargo_qc_cmd();
     cmd.arg("--strict").arg("--version");
-    
-    // We use --version so it doesn't actually run the full suite which might fail 
+
+    // We use --version so it doesn't actually run the full suite which might fail
     // due to unformatted test files being generated.
     cmd.assert().success();
 }
@@ -67,10 +67,10 @@ fn test_telemetry_missing_value() {
     let mut cmd = cargo_qc_cmd();
     // Telemetry requires a URL value after it
     cmd.arg("--telemetry");
-    
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("error: The argument '--telemetry' requires a value but none was supplied"));
+
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "error: The argument '--telemetry' requires a value but none was supplied",
+    ));
 }
 
 #[test]
