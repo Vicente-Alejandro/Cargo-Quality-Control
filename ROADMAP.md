@@ -29,28 +29,28 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ---
 
-## v0.6.0: Configuration and Testing
+## v0.6.0: Mantenibilidad Estricta (SIG Principles) sin Configuración
 
-- [ ] **`cargo-qc.toml`**, parsed with `serde` + `toml` into a `QcConfig` struct. Use `#[serde(default)]` on every field so a missing file, an empty file, and a partially-filled file all behave identically to "everything enabled":
-  ```toml
-  [checks]
-  fmt = true
-  clippy = true
-  build = true
-  test = true
+- [ ] **Mantenibilidad Estricta (SIG Principles).** Integrar los 10 principios de mantenibilidad de *Building Maintainable Software* respetando la filosofía "zero config".
+- [ ] **Bandera `--strict`.** Añadir una bandera explícita `--strict` (y variable de entorno `QC_STRICT=1`). Si se activa el modo estricto, `cargo-qc` inyectará automáticamente banderas adicionales al subproceso de `clippy` (`-D clippy::cognitive_complexity`, `-D clippy::too_many_arguments`, `-D clippy::type_complexity`). No se creará archivo de configuración.
 
-  [clippy]
-  deny_warnings = true
-  extra_args = []
+**Definition of Done:** `cargo qc --strict` inyecta correctamente las reglas restrictivas de clippy, logrando que el código complejo falle la validación.
 
-  [output]
-  color = "auto"   # "auto" | "always" | "never"
-  ```
-  Precedence, documented explicitly once implemented: **CLI flags > config file > built-in defaults** (a `--skip-fmt` flag always wins over `checks.fmt = true`).
-- [ ] **Integration tests with `assert_cmd`** (`Command::cargo_bin("cargo-qc")`, `.assert().success()` / `.failure()`) plus `predicates` for output assertions and `tempfile`/`assert_fs` for isolated fixture project directories. Each test builds a throwaway Rust project in a `TempDir` in a known-good or known-bad state (unformatted file, a clippy lint, a compile error) and asserts both the exit code and the generated `.qc_history.md` / `.qc_errors.log` contents.
-- [ ] **Unit tests in `lib.rs`** for the parts that don't need a real cargo project: the `cargo pkgid` version-parsing logic (both historical formats the current code already handles), config precedence resolution, and the `QcError` → exit-code mapping.
+---
 
-**Definition of Done:** `cargo test` runs both suites in CI; a config file with only `checks.clippy = false` demonstrably skips clippy while still running the rest.
+## v0.6.1: Métricas de Entrega (DORA Metrics)
+
+- [ ] **Registro de Duración.** Registrar en `.qc_history.md` el tiempo de ejecución de las pruebas y verificaciones, sirviendo como base de datos local para calcular el *Lead Time* y el *Change Failure Rate* del desarrollador (*Accelerate*).
+
+**Definition of Done:** `.qc_history.md` incluye columnas de tiempo/duración de la ejecución.
+
+---
+
+## v0.6.2: Auditoría Continua y Telemetría
+
+- [ ] **Auditoría Continua.** Pasar de auditoría aislada a auditoría continua (*EBSCO / CISA*). Introducir un modo oculto `--telemetry <URL>`. Tras finalizar la ejecución, se enviará de forma asíncrona un payload JSON al servidor indicado con el resultado de la corrida.
+
+**Definition of Done:** Ejecutar `cargo qc --telemetry http://localhost:8080` envía un POST JSON exitoso con el reporte de la ejecución.
 
 ---
 
