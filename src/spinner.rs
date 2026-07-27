@@ -1,9 +1,9 @@
+use owo_colors::OwoColorize;
 use std::io::{self, Write};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
-use owo_colors::OwoColorize;
 
 const FRAMES: &[&str] = &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
@@ -40,7 +40,12 @@ impl Spinner {
                     if no_color {
                         print!("\r[cargo-qc] {} {} ... ", frame, msg_clone);
                     } else {
-                        print!("\r{} {} {} ... ", "[cargo-qc]".dimmed(), frame.cyan(), msg_clone);
+                        print!(
+                            "\r{} {} {} ... ",
+                            "[cargo-qc]".dimmed(),
+                            frame.cyan(),
+                            msg_clone
+                        );
                     }
                     let _ = io::stdout().flush();
                     i += 1;
@@ -76,7 +81,13 @@ impl Spinner {
             if self.no_color {
                 println!("\r[cargo-qc] {} ... {}{}", self.msg, spaces, icon);
             } else {
-                println!("\r{} {} ... {}{}", "[cargo-qc]".dimmed(), self.msg, spaces, icon);
+                println!(
+                    "\r{} {} ... {}{}",
+                    "[cargo-qc]".dimmed(),
+                    self.msg,
+                    spaces,
+                    icon
+                );
             }
         }
     }
