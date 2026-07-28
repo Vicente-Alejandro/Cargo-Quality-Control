@@ -126,7 +126,10 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
                     "\n[cargo-qc] Note: The process is taking longer than expected (15s). Please be patient..."
                 );
             } else {
-                println!("\n{} Note: The process is taking longer than expected (15s). Please be patient...", "[cargo-qc]".dimmed());
+                println!(
+                    "\n{} Note: The process is taking longer than expected (15s). Please be patient...",
+                    "[cargo-qc]".dimmed()
+                );
             }
         }
     });

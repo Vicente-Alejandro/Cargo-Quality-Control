@@ -41,7 +41,10 @@ pub fn run_fmt(err_log: &mut String, disable_spinners: bool, no_color_opt: bool)
         if no_color() {
             eprintln!("hint: run 'cargo fmt' to automatically fix formatting issues.");
         } else {
-            eprintln!("{}", "hint: run 'cargo fmt' to automatically fix formatting issues.".yellow());
+            eprintln!(
+                "{}",
+                "hint: run 'cargo fmt' to automatically fix formatting issues.".yellow()
+            );
         }
     }
     pass
