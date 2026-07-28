@@ -4,6 +4,10 @@
 
 **Local quality control automation for Rust projects.**
 
+![cargo-qc demo](demo.gif)
+
+Zero configuration, zero dependencies (almost), zero excuses.
+
 [![Crates.io](https://img.shields.io/crates/v/cargo-qc?style=flat-square&color=orange)](https://crates.io/crates/cargo-qc)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](./LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
