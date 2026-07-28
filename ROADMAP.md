@@ -29,46 +29,46 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ---
 
-## v0.6.0: Mantenibilidad Estricta (SIG Principles) sin Configuración
+## v0.6.0: Strict Maintainability (SIG Principles) without Configuration
 
-- [ ] **Mantenibilidad Estricta (SIG Principles).** Integrar los 10 principios de mantenibilidad de *Building Maintainable Software* respetando la filosofía "zero config".
-- [ ] **Bandera `--strict`.** Añadir una bandera explícita `--strict` (y variable de entorno `QC_STRICT=1`). Si se activa el modo estricto, `cargo-qc` inyectará automáticamente banderas adicionales al subproceso de `clippy` (`-D clippy::cognitive_complexity`, `-D clippy::too_many_arguments`, `-D clippy::type_complexity`). No se creará archivo de configuración.
+- [x] **Strict Maintainability (SIG Principles).** Integrate the 10 maintainability principles from *Building Maintainable Software* while respecting the "zero config" philosophy.
+- [x] **`--strict` Flag.** Add an explicit `--strict` flag (and `QC_STRICT=1` env var). If strict mode is activated, `cargo-qc` will automatically inject additional flags to the `clippy` subprocess (`-D clippy::cognitive_complexity`, `-D clippy::too_many_arguments`, `-D clippy::type_complexity`). No configuration file will be created.
 
-**Definition of Done:** `cargo qc --strict` inyecta correctamente las reglas restrictivas de clippy, logrando que el código complejo falle la validación.
-
----
-
-## v0.6.1: Métricas de Entrega (DORA Metrics)
-
-- [x] **Registro de Duración.** Registrar en `.qc_history.md` el tiempo de ejecución de las pruebas y verificaciones, sirviendo como base de datos local para calcular el *Lead Time* y el *Change Failure Rate* del desarrollador (*Accelerate*).
-
-**Definition of Done:** `.qc_history.md` incluye columnas de tiempo/duración de la ejecución.
+**Definition of Done:** `cargo qc --strict` correctly injects restrictive clippy rules, causing complex code to fail validation.
 
 ---
 
-## v0.6.2: Auditoría Continua y Telemetría
+## v0.6.1: Delivery Metrics (DORA Metrics)
 
-- [x] **Auditoría Continua.** Pasar de auditoría aislada a auditoría continua (*EBSCO / CISA*). Introducir un modo oculto `--telemetry <URL>`. Tras finalizar la ejecución, se enviará de forma asíncrona un payload JSON al servidor indicado con el resultado de la corrida.
+- [x] **Duration Logging.** Log the execution time of tests and checks in `.qc_history.md`, serving as a local database to calculate the developer's *Lead Time* and *Change Failure Rate* (*Accelerate*).
 
-**Definition of Done:** Ejecutar `cargo qc --telemetry http://localhost:8080` envía un POST JSON exitoso con el reporte de la ejecución.
-
----
-
-## v0.6.3: Refactorización y Resiliencia (QA Fase 1)
-
-- [ ] **Arquitectura Modular.** Dividir `lib.rs` en módulos (`config.rs`, `history.rs`, `runner.rs`, `telemetry.rs`) para cumplir con los principios de SIG (unidades de código cortas e interfaces pequeñas).
-- [ ] **Resiliencia.** Manejo de errores seguro para la lectura de `stdin` y validación de la existencia de `curl` antes de intentar telemetría.
-
-**Definition of Done:** `cargo qc` funciona idénticamente, pero internamente el código está modularizado y no produce `panics` en entornos sin TTY.
+**Definition of Done:** `.qc_history.md` includes time/duration columns for the execution.
 
 ---
 
-## v0.6.4: Cobertura de Pruebas (QA Fase 2)
+## v0.6.2: Continuous Auditing and Telemetry
 
-- [ ] **Tests de Integración.** Configurar el crate `assert_cmd` como dependencia de desarrollo (`dev-dependencies`) para simular comandos de consola y probar escenarios de salida, fallos y telemetría.
-- [ ] **Tests Unitarios.** Pruebas para parseo, utilidades y configuración.
+- [x] **Continuous Auditing.** Move from isolated auditing to continuous auditing (*EBSCO / CISA*). Introduce a hidden `--telemetry <URL>` mode. After finishing the execution, an asynchronous JSON payload will be sent to the specified server with the run's result.
 
-**Definition of Done:** Se cuenta con un suite de pruebas en `tests/` que pasa exitosamente con `cargo test`.
+**Definition of Done:** Running `cargo qc --telemetry http://localhost:8080` sends a successful POST JSON payload with the execution report.
+
+---
+
+## v0.6.3: Refactoring and Resilience (QA Phase 1)
+
+- [x] **Modular Architecture.** Split `lib.rs` into modules (`config.rs`, `history.rs`, `runner.rs`, `telemetry.rs`) to comply with SIG principles (short code units and small interfaces).
+- [x] **Resilience.** Safe error handling for reading `stdin` and validation of `curl`'s existence before attempting telemetry.
+
+**Definition of Done:** `cargo qc` works identically, but internally the code is modularized and does not produce `panics` in non-TTY environments.
+
+---
+
+## v0.6.4: Test Coverage (QA Phase 2)
+
+- [x] **Integration Tests.** Configure the `assert_cmd` crate as a `dev-dependency` to simulate console commands and test output scenarios, failures, and telemetry.
+- [x] **Unit Tests.** Tests for parsing, utilities, and configuration.
+
+**Definition of Done:** A test suite exists in `tests/` that passes successfully with `cargo test`.
 
 ---
 
