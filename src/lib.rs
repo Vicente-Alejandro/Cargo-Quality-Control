@@ -108,6 +108,29 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
 
     ctx.ensure_gitignore(options.ci)?;
 
+    let done_signal = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let done_clone = std::sync::Arc::clone(&done_signal);
+    let no_color_val = options.no_color;
+    std::thread::spawn(move || {
+        let mut elapsed = 0;
+        while elapsed < 15 {
+            if done_clone.load(std::sync::atomic::Ordering::Relaxed) {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            elapsed += 1;
+        }
+        if !done_clone.load(std::sync::atomic::Ordering::Relaxed) {
+            if no_color_val {
+                println!(
+                    "\n[cargo-qc] Note: The process is taking longer than expected (15s). Please be patient..."
+                );
+            } else {
+                println!("\n{} Note: The process is taking longer than expected (15s). Please be patient...", "[cargo-qc]".dimmed());
+            }
+        }
+    });
+
     let mut err_log = String::new();
 
     let fmt_pass = if !options.skip_fmt {
@@ -138,6 +161,8 @@ pub fn run(options: QcOptions) -> anyhow::Result<()> {
     } else {
         true
     };
+
+    done_signal.store(true, std::sync::atomic::Ordering::Relaxed);
 
     let all_passed = fmt_pass && clippy_pass && build_pass && test_pass;
     let failed_count = [fmt_pass, clippy_pass, build_pass, test_pass]
