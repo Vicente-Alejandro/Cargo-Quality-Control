@@ -4,6 +4,16 @@ version = "0.7.0"
 rust-version = "1.85"
 edition = "2024"
 description = "A custom cargo command for quality control (fmt, clippy, test etc)"
+exclude = [
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "cliff.toml",
+    "ROADMAP.md",
+    ".github/",
+    ".agents/",
+]
 authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]
 license = "MIT"
 repository = "https://github.com/Vicente-Alejandro/Cargo-Quality-Control"
