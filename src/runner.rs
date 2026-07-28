@@ -13,6 +13,23 @@ fn truncate_for_term(output: &str) -> String {
     }
 }
 
+fn strip_ansi(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let mut in_escape = false;
+    for c in s.chars() {
+        if c == '\x1b' {
+            in_escape = true;
+        } else if in_escape {
+            if c.is_ascii_alphabetic() {
+                in_escape = false;
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
 /// Runs `cargo fmt --check`.
 /// Logs errors and updates the error log string if it fails.
 pub fn run_fmt(err_log: &mut String, disable_spinners: bool, no_color_opt: bool) -> bool {
@@ -33,10 +50,12 @@ pub fn run_fmt(err_log: &mut String, disable_spinners: bool, no_color_opt: bool)
         && !pass
     {
         err_log.push_str("--- FMT ERROR ---\n");
-        err_log.push_str(&String::from_utf8_lossy(&fmt_output.stdout));
-        err_log.push_str(&String::from_utf8_lossy(&fmt_output.stderr));
+        let stdout_clean = strip_ansi(&String::from_utf8_lossy(&fmt_output.stdout));
+        let stderr_clean = strip_ansi(&String::from_utf8_lossy(&fmt_output.stderr));
+        err_log.push_str(&stdout_clean);
+        err_log.push_str(&stderr_clean);
         err_log.push('\n');
-        let term_err = truncate_for_term(&String::from_utf8_lossy(&fmt_output.stderr));
+        let term_err = truncate_for_term(&stderr_clean);
         eprintln!("{}", term_err);
         if no_color() {
             eprintln!("hint: run 'cargo fmt' to automatically fix formatting issues.");
@@ -82,10 +101,12 @@ pub fn run_clippy(
         && !pass
     {
         err_log.push_str("--- CLIPPY ERROR ---\n");
-        err_log.push_str(&String::from_utf8_lossy(&clippy_output.stdout));
-        err_log.push_str(&String::from_utf8_lossy(&clippy_output.stderr));
+        let stdout_clean = strip_ansi(&String::from_utf8_lossy(&clippy_output.stdout));
+        let stderr_clean = strip_ansi(&String::from_utf8_lossy(&clippy_output.stderr));
+        err_log.push_str(&stdout_clean);
+        err_log.push_str(&stderr_clean);
         err_log.push('\n');
-        let term_err = truncate_for_term(&String::from_utf8_lossy(&clippy_output.stderr));
+        let term_err = truncate_for_term(&stderr_clean);
         eprintln!("{}", term_err);
         if no_color() {
             eprintln!("hint: run 'cargo clippy --fix' to automatically resolve warnings.");
@@ -115,10 +136,12 @@ pub fn run_build(err_log: &mut String, disable_spinners: bool, no_color_opt: boo
         && !pass
     {
         err_log.push_str("--- BUILD ERROR ---\n");
-        err_log.push_str(&String::from_utf8_lossy(&build_output.stdout));
-        err_log.push_str(&String::from_utf8_lossy(&build_output.stderr));
+        let stdout_clean = strip_ansi(&String::from_utf8_lossy(&build_output.stdout));
+        let stderr_clean = strip_ansi(&String::from_utf8_lossy(&build_output.stderr));
+        err_log.push_str(&stdout_clean);
+        err_log.push_str(&stderr_clean);
         err_log.push('\n');
-        let term_err = truncate_for_term(&String::from_utf8_lossy(&build_output.stderr));
+        let term_err = truncate_for_term(&stderr_clean);
         eprintln!("{}", term_err);
         if no_color() {
             eprintln!("hint: fix compiler errors above.");
@@ -145,10 +168,12 @@ pub fn run_test(err_log: &mut String, disable_spinners: bool, no_color_opt: bool
         && !pass
     {
         err_log.push_str("--- TEST ERROR ---\n");
-        err_log.push_str(&String::from_utf8_lossy(&test_output.stdout));
-        err_log.push_str(&String::from_utf8_lossy(&test_output.stderr));
+        let stdout_clean = strip_ansi(&String::from_utf8_lossy(&test_output.stdout));
+        let stderr_clean = strip_ansi(&String::from_utf8_lossy(&test_output.stderr));
+        err_log.push_str(&stdout_clean);
+        err_log.push_str(&stderr_clean);
         err_log.push('\n');
-        let term_err = truncate_for_term(&String::from_utf8_lossy(&test_output.stderr));
+        let term_err = truncate_for_term(&stderr_clean);
         eprintln!("{}", term_err);
         if no_color() {
             eprintln!("hint: review failing tests and try again.");
