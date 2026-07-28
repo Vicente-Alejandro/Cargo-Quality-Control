@@ -4,16 +4,6 @@ version = "0.7.0"
 rust-version = "1.85"
 edition = "2024"
 description = "A custom cargo command for quality control (fmt, clippy, test etc)"
-exclude = [
-    "CONTRIBUTING.md",
-    "CODE_OF_CONDUCT.md",
-    "SECURITY.md",
-    "CHANGELOG.md",
-    "cliff.toml",
-    "ROADMAP.md",
-    ".github/",
-    ".agents/",
-]
 authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]
 license = "MIT"
 repository = "https://github.com/Vicente-Alejandro/Cargo-Quality-Control"
@@ -23,13 +13,14 @@ keywords = ["cli", "cargo-subcommand", "quality-control", "automation"]
 categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
 exclude = [
-    "/.agents",
-    "/.github",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "cliff.toml",
     "ROADMAP.md",
-    "develop.t",
-    "test_server.py",
-    "/tools/",
-    "CHANGELOG.md"
+    ".github/",
+    ".agents/",
 ]
 
 [dependencies]
