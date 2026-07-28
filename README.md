@@ -88,7 +88,7 @@ cd cargo-qc
 cargo install --path .
 ```
 
-**From crates.io (once published):**
+**From crates.io:**
 
 ```bash
 cargo install cargo-qc
@@ -237,7 +237,7 @@ jobs:
 
       - name: Install cargo-qc
         run: cargo install --path tools/cargo-qc
-        # Or: cargo install cargo-qc (once published)
+        # Or: cargo install cargo-qc
 
       - name: Run quality checks
         run: cargo qc
