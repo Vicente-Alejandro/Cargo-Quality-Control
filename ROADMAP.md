@@ -74,11 +74,11 @@ This document outlines the development phases to elevate `cargo-qc` to a profess
 
 ## v0.7.0: Open Source Standardization
 
-- [ ] **`git-cliff` + `cliff.toml`** with `conventional_commits = true` and `commit_parsers` grouping (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`) for automated `CHANGELOG.md` generation. This implies adopting Conventional Commits going forward, which lines up with your `atomic-commits` and `semver-tagging` conventions.
-- [ ] **`CONTRIBUTING.md`**: PR checklist (`cargo qc` must pass locally before opening a PR), commit-message conventions, instructions for running the new integration test suite.
-- [ ] **`SECURITY.md`**: where to report a vulnerability, expected response window, and the supported version range — this pairs naturally with the MSRV policy from v1.0.0 below.
-- [ ] **`CODE_OF_CONDUCT.md`** (Contributor Covenant is the de facto standard). Low effort, and GitHub surfaces it as one of its "community standards" checks.
-- [ ] **README demo**: commit the `vhs` tape script (`demo.tape`) itself, not just the rendered GIF/SVG — anyone can regenerate it from source instead of trusting a stale binary asset.
+- [x] **`git-cliff` + `cliff.toml`** with `conventional_commits = true` and `commit_parsers` grouping (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`) for automated `CHANGELOG.md` generation. This implies adopting Conventional Commits going forward, which lines up with your `atomic-commits` and `semver-tagging` conventions.
+- [x] **`CONTRIBUTING.md`**: PR checklist (`cargo qc` must pass locally before opening a PR), commit-message conventions, instructions for running the new integration test suite.
+- [x] **`SECURITY.md`**: where to report a vulnerability, expected response window, and the supported version range — this pairs naturally with the MSRV policy from v1.0.0 below.
+- [x] **`CODE_OF_CONDUCT.md`** (Contributor Covenant is the de facto standard). Low effort, and GitHub surfaces it as one of its "community standards" checks.
+- [x] **README demo**: commit the `vhs` tape script (`demo.tape`) itself, not just the rendered GIF/SVG — anyone can regenerate it from source instead of trusting a stale binary asset.
 
 **Definition of Done:** GitHub's "Community Standards" checklist for the repo is fully green; `CHANGELOG.md` regenerates cleanly from `git cliff` with no manual edits needed for the next tagged release.
 

@@ -25,7 +25,7 @@ fn test_version() {
     cmd.arg("--version");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("cargo-qc 0.6.6")); // Assuming we bump to 0.6.6
+        .stdout(predicate::str::contains("cargo-qc 0.7.0")); // Assuming we bump to 0.7.0
 }
 
 #[test]
