@@ -1,6 +1,7 @@
 [package]
 name = "cargo-qc"
-version = "0.6.5"
+version = "0.6.6"
+rust-version = "1.85"
 edition = "2024"
 description = "A custom cargo command for quality control (fmt, clippy, test etc)"
 authors = ["Vicente Alejandro <alejandrohidalgosh@email.com>"]

@@ -23,17 +23,17 @@ use std::time::Instant;
 const PREFIX: &str = "[cargo-qc]";
 const CHECK_LABEL_WIDTH: usize = 34;
 
-static mut GLOBAL_NO_COLOR: bool = false;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static GLOBAL_NO_COLOR: AtomicBool = AtomicBool::new(false);
 
 /// Sets the global no-color flag for logging functions.
 fn set_no_color(no_color: bool) {
-    unsafe {
-        GLOBAL_NO_COLOR = no_color;
-    }
+    GLOBAL_NO_COLOR.store(no_color, Ordering::Relaxed);
 }
 
 pub(crate) fn no_color() -> bool {
-    unsafe { GLOBAL_NO_COLOR }
+    GLOBAL_NO_COLOR.load(Ordering::Relaxed)
 }
 
 /// Logs a plain message to the console with the `[cargo-qc]` prefix.

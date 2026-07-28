@@ -58,5 +58,5 @@ pub fn send(
         .arg("--max-time")
         .arg("3")
         .arg(url)
-        .status();
+        .spawn();
 }
